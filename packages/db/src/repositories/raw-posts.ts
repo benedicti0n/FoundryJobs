@@ -1,4 +1,4 @@
-import { and, desc, eq, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, type SQL } from "drizzle-orm";
 import {
   createContentHash,
   isEnvSet,
@@ -135,6 +135,30 @@ export async function listRawPosts(query: RawPostListQuery = {}): Promise<RawPos
     .offset(offset);
 
   return rows.map(toRawPostDto);
+}
+
+export async function listNewRawPosts(limit = 25): Promise<RawPostDto[]> {
+  const database = requireDatabase();
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), RAW_POST_LIST_MAX_LIMIT);
+
+  const rows = await database
+    .select()
+    .from(rawPosts)
+    .where(eq(rawPosts.status, "new"))
+    .orderBy(asc(rawPosts.fetchedAt), asc(rawPosts.id))
+    .limit(safeLimit);
+
+  return rows.map(toRawPostDto);
+}
+
+export async function getRawPostById(id: string): Promise<RawPostDto | null> {
+  const database = requireDatabase();
+  if (!isUuid(id)) {
+    return null;
+  }
+
+  const [row] = await database.select().from(rawPosts).where(eq(rawPosts.id, id)).limit(1);
+  return row ? toRawPostDto(row) : null;
 }
 
 export async function markRawPostStatus(
