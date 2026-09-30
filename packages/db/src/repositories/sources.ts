@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import {
   isUuid,
   isEnvSet,
@@ -21,9 +21,11 @@ import { sources } from "../schema";
 type SourceRow = typeof sources.$inferSelect;
 type SourceInsert = typeof sources.$inferInsert;
 
-function requireDatabase(): Database {
+function requireDatabase(
+  message = "DATABASE_URL is required for source repository operations",
+): Database {
   if (!isEnvSet("DATABASE_URL")) {
-    throw new DatabaseNotConfiguredError();
+    throw new DatabaseNotConfiguredError(message);
   }
   return getDatabase();
 }
@@ -137,6 +139,26 @@ export async function listSources(query: SourceListQuery = {}): Promise<SourceDt
     .orderBy(desc(sources.createdAt), desc(sources.id))
     .limit(limit)
     .offset(offset);
+
+  return rows.map(toSourceDto);
+}
+
+export async function listActiveSourcesDueForFetch(now: Date): Promise<SourceDto[]> {
+  const database = requireDatabase("DATABASE_URL is required for fetch repository operations");
+
+  const dueCondition = or(
+    isNull(sources.lastFetchedAt),
+    lte(
+      sources.lastFetchedAt,
+      sql`${now}::timestamptz - (${sources.fetchIntervalMinutes} * interval '1 minute')`,
+    ),
+  );
+
+  const rows = await database
+    .select()
+    .from(sources)
+    .where(and(eq(sources.isActive, true), dueCondition))
+    .orderBy(sql`${sources.lastFetchedAt} asc nulls first`, asc(sources.createdAt));
 
   return rows.map(toSourceDto);
 }

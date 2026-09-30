@@ -1,0 +1,1 @@
+ALTER TABLE "raw_posts" ADD COLUMN "posted_at" timestamp with time zone;

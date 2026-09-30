@@ -14,6 +14,7 @@ export const rawPosts = pgTable(
     rawText: text("raw_text").notNull(),
     rawHtml: text("raw_html"),
     contentHash: text("content_hash").notNull().unique(),
+    postedAt: timestamp("posted_at", { withTimezone: true }),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
     status: text("status").notNull().default("new"),
     errorMessage: text("error_message"),

@@ -1,6 +1,6 @@
 export class DatabaseNotConfiguredError extends Error {
-  constructor() {
-    super("DATABASE_URL is required for source repository operations");
+  constructor(message = "DATABASE_URL is required for source repository operations") {
+    super(message);
     this.name = "DatabaseNotConfiguredError";
   }
 }
