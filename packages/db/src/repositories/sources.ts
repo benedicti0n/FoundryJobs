@@ -49,13 +49,22 @@ function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, "\\$&");
 }
 
+function hasPostgresCode(value: unknown, code: string): boolean {
+  if (typeof value !== "object" || value === null || !("code" in value)) {
+    return false;
+  }
+  return (value as { code?: unknown }).code === code;
+}
+
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "23505"
-  );
+  let current: unknown = error;
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (hasPostgresCode(current, "23505")) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return false;
 }
 
 function rethrowSourceError(error: unknown): never {
