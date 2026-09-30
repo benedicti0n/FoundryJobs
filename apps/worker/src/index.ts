@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { closeDatabase } from "@foundryjobs/db";
 import { fetchDueSources } from "@foundryjobs/fetchers";
+import { normalizeNewRawPosts } from "@foundryjobs/normalizer";
 import { APP_NAME, isEnvSet } from "@foundryjobs/shared";
 
 const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
@@ -44,6 +45,55 @@ async function runFetchOnce(): Promise<void> {
   }
 }
 
+function parseNormalizeLimit(value: string | undefined): number {
+  if (!value) {
+    return 25;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return 25;
+  }
+  return Math.min(parsed, 200);
+}
+
+async function runNormalizeOnce(): Promise<void> {
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run normalize:once. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const limit = parseNormalizeLimit(process.env.NORMALIZE_LIMIT);
+  const provider = isEnvSet("GEMINI_API_KEY") ? "gemini" : "rules";
+
+  try {
+    const summary = await normalizeNewRawPosts(limit);
+    console.log(
+      `${APP_NAME} normalize run complete (limit ${limit}, extraction provider ${provider})`,
+    );
+    console.log(
+      `Processed ${summary.processedCount} raw posts (normalized ${summary.normalizedCount}, rejected ${summary.rejectedCount}, errors ${summary.errorCount})`,
+    );
+
+    for (const result of summary.results) {
+      const jobPart = result.jobPostId ? ` -> job ${result.jobPostId}` : "";
+      const scorePart =
+        result.totalScore !== undefined
+          ? ` score=${result.totalScore} shouldPost=${result.shouldPost}`
+          : "";
+      const errorPart = result.errorMessage ? ` — ${result.errorMessage}` : "";
+      console.log(`  [${result.status}] ${result.rawPostId}${jobPart}${scorePart}${errorPart}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -68,6 +118,8 @@ const command = process.argv[2];
 
 if (command === "fetch:once") {
   await runFetchOnce();
+} else if (command === "normalize:once") {
+  await runNormalizeOnce();
 } else {
   startWorkerLoop();
 }
