@@ -15,6 +15,8 @@ app.get("/v1/status", async () => ({
   ready: true,
 }));
 
+app.get("/v1/db/status", async () => getDatabaseStatus());
+
 app.setErrorHandler((error: FastifyError, request, reply) => {
   request.log.error(error);
   const statusCode = error.statusCode ?? 500;
