@@ -6,8 +6,9 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 2 — Source Registry.** The monorepo, PostgreSQL schema, and source registry
-CRUD are in place. Fetching, AI scoring, post generation, and publishing land in later phases.
+**Current phase: Phase 3 — Fetching Foundation.** The monorepo, PostgreSQL schema, source registry,
+and the first ATS fetchers (Greenhouse, Lever, Ashby) are in place. AI scoring, post generation, and
+publishing land in later phases.
 
 ## Requirements
 
@@ -19,9 +20,10 @@ CRUD are in place. Fetching, AI scoring, post generation, and publishing land in
 
 - `apps/web` — Next.js dashboard (Tailwind, TypeScript)
 - `apps/api` — Fastify API server
-- `apps/worker` — background worker placeholder
+- `apps/worker` — background worker placeholder and one-time fetch command
 - `packages/shared` — shared constants, types, DTOs, and validation helpers
 - `packages/db` — Drizzle schema, migrations, repositories, and seed scripts
+- `packages/fetchers` — ATS fetchers (Greenhouse, Lever, Ashby) and fetch runs
 - `docs/` — project documentation
 
 ## Getting started
@@ -39,6 +41,8 @@ pnpm dev:web     # http://localhost:3000
 pnpm dev:api     # http://localhost:4000
 pnpm dev:worker  # boots the worker placeholder
 pnpm dev         # all three in parallel
+
+pnpm --filter @foundryjobs/worker fetch:once  # fetch all due sources once, then exit
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, and the source registry under
@@ -75,12 +79,19 @@ Schema lives in `packages/db/src/schema`; migrations are written to `packages/db
 | PATCH  | `/v1/sources/:id`        | Partially update a source                                                  |
 | PATCH  | `/v1/sources/:id/active` | Activate or pause a source                                                 |
 | DELETE | `/v1/sources/:id`        | Delete a source                                                            |
+| POST   | `/v1/sources/:id/fetch`  | Fetch one source now and store its raw posts                               |
 
-Source fetching is **not implemented yet** — the registry only stores where future fetches will run.
-See [docs/02-source-registry.md](docs/02-source-registry.md) for types, platforms, and examples.
+Fetching is implemented for **Greenhouse, Lever, and Ashby** sources; other platforms can be
+registered but are reported as `unsupported` until a fetcher is added. Fetch runs store raw posts in
+`raw_posts` and deduplicate by content hash. There is no scheduler yet; use
+`pnpm --filter @foundryjobs/worker fetch:once` or the per-source endpoint.
+
+See [docs/02-source-registry.md](docs/02-source-registry.md) for types, platforms, and examples, and
+[docs/03-fetching-pipeline.md](docs/03-fetching-pipeline.md) for the fetching pipeline.
 
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
 - [Database schema](docs/01-database-schema.md)
 - [Source registry](docs/02-source-registry.md)
+- [Fetching pipeline](docs/03-fetching-pipeline.md)
