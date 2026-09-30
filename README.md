@@ -49,6 +49,17 @@ pnpm lint       # ESLint across the workspace
 pnpm format     # Prettier write
 ```
 
+## Database
+
+```bash
+pnpm db:generate  # generate SQL migrations from the Drizzle schema
+pnpm db:migrate   # apply migrations (requires DATABASE_URL)
+pnpm db:studio    # open Drizzle Studio (requires DATABASE_URL)
+```
+
+Schema lives in `packages/db/src/schema`; migrations are written to `packages/db/drizzle`.
+See [docs/01-database-schema.md](docs/01-database-schema.md) for the data model.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
