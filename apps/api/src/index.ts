@@ -1,6 +1,8 @@
 import Fastify, { type FastifyError } from "fastify";
 import { APP_NAME, getPort } from "@foundryjobs/shared";
 import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
+import { registerJobPostRoutes } from "./routes/job-posts";
+import { registerRawPostRoutes } from "./routes/raw-posts";
 import { registerSourceRoutes } from "./routes/sources";
 
 const app = Fastify({ logger: true });
@@ -71,4 +73,6 @@ function registerShutdownHandlers(): void {
 
 registerShutdownHandlers();
 await registerSourceRoutes(app);
+await registerRawPostRoutes(app);
+await registerJobPostRoutes(app);
 await start();

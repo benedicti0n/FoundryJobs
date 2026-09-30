@@ -6,5 +6,5 @@ export default defineConfig({
   target: "node20",
   clean: true,
   sourcemap: true,
-  noExternal: ["@foundryjobs/shared", "@foundryjobs/db", "@foundryjobs/fetchers"],
+  noExternal: [/^@foundryjobs\//],
 });

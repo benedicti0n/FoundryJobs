@@ -35,6 +35,9 @@ importers:
       '@foundryjobs/fetchers':
         specifier: workspace:*
         version: link:../../packages/fetchers
+      '@foundryjobs/normalizer':
+        specifier: workspace:*
+        version: link:../../packages/normalizer
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
