@@ -146,11 +146,12 @@ export async function listSources(query: SourceListQuery = {}): Promise<SourceDt
 export async function listActiveSourcesDueForFetch(now: Date): Promise<SourceDto[]> {
   const database = requireDatabase("DATABASE_URL is required for fetch repository operations");
 
+  const nowIso = now.toISOString();
   const dueCondition = or(
     isNull(sources.lastFetchedAt),
     lte(
       sources.lastFetchedAt,
-      sql`${now}::timestamptz - (${sources.fetchIntervalMinutes} * interval '1 minute')`,
+      sql`${nowIso}::timestamptz - (${sources.fetchIntervalMinutes} * interval '1 minute')`,
     ),
   );
 
