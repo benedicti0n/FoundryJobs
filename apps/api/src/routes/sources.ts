@@ -15,6 +15,7 @@ import {
   SourceConflictError,
   updateSource,
 } from "@foundryjobs/db";
+import { fetchSource } from "@foundryjobs/fetchers";
 
 function errorBody(message: string): { error: { message: string } } {
   return { error: { message } };
@@ -50,6 +51,21 @@ export async function registerSourceRoutes(app: FastifyInstance): Promise<void> 
       return sendNotFound(reply);
     }
     return { data: source };
+  });
+
+  app.post<{ Params: { id: string } }>("/v1/sources/:id/fetch", async (request, reply) => {
+    const { id } = request.params;
+    if (!isUuid(id)) {
+      return sendValidationError(reply, ["id must be a valid UUID"]);
+    }
+
+    const source = await getSourceById(id);
+    if (!source) {
+      return sendNotFound(reply);
+    }
+
+    const result = await fetchSource(source);
+    return { data: result };
   });
 
   app.post("/v1/sources", async (request, reply) => {

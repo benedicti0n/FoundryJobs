@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@foundryjobs/db": "workspace:*",
+    "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/shared": "workspace:*",
     "fastify": "^5.12.5"
   },

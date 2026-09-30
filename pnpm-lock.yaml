@@ -32,6 +32,9 @@ importers:
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@foundryjobs/fetchers':
+        specifier: workspace:*
+        version: link:../../packages/fetchers
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
