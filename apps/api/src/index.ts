@@ -1,6 +1,7 @@
 import Fastify, { type FastifyError } from "fastify";
 import { APP_NAME, getPort } from "@foundryjobs/shared";
-import { getDatabaseStatus } from "@foundryjobs/db";
+import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
+import { registerSourceRoutes } from "./routes/sources";
 
 const app = Fastify({ logger: true });
 
@@ -17,11 +18,23 @@ app.get("/v1/status", async () => ({
 
 app.get("/v1/db/status", async () => getDatabaseStatus());
 
+app.setNotFoundHandler((request, reply) => {
+  reply
+    .status(404)
+    .send({ error: { message: `Route ${request.method}:${request.url} not found` } });
+});
+
 app.setErrorHandler((error: FastifyError, request, reply) => {
   request.log.error(error);
+
+  if (error instanceof DatabaseNotConfiguredError) {
+    reply.status(500).send({ error: { message: error.message } });
+    return;
+  }
+
   const statusCode = error.statusCode ?? 500;
   const message = statusCode >= 500 ? "Internal Server Error" : error.message;
-  reply.status(statusCode).send({ ok: false, error: message });
+  reply.status(statusCode).send({ error: { message } });
 });
 
 const port = getPort(4000);
@@ -57,4 +70,5 @@ function registerShutdownHandlers(): void {
 }
 
 registerShutdownHandlers();
+await registerSourceRoutes(app);
 await start();
