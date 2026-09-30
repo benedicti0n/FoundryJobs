@@ -58,7 +58,7 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-5xl flex-col gap-12 px-6 py-16">
       <header className="space-y-4">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">
-          Phase 2 · Source Registry
+          Phase 3 · Fetching Foundation
         </p>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{APP_NAME}</h1>
         <p className="max-w-2xl text-lg text-slate-300">

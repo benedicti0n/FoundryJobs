@@ -14,6 +14,17 @@ const sourceTypeDescriptions: Record<SourceType, string> = {
   manual: "Submissions added by hand until automated sources cover them.",
 };
 
+function formatTimestamp(value: string | null): string {
+  if (!value) {
+    return "Never";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 type SourcesState =
   | { status: "unconfigured" }
   | { status: "error"; message: string }
@@ -64,7 +75,8 @@ export default async function SourcesPage() {
           Manage places FoundryJobs will fetch hiring posts from.
         </p>
         <p className="text-sm text-slate-500">
-          Fetching is not implemented yet — this registry stores where future fetches will run.
+          Fetching is implemented for Greenhouse, Lever, and Ashby sources. Other platforms can be
+          registered but are not fetched yet.
         </p>
       </header>
 
@@ -100,6 +112,7 @@ export default async function SourcesPage() {
                   <th className="px-4 py-3">Platform</th>
                   <th className="px-4 py-3">Trust</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Last fetched</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -116,6 +129,9 @@ export default async function SourcesPage() {
                       <span className={source.isActive ? "text-emerald-400" : "text-slate-500"}>
                         {source.isActive ? "Active" : "Paused"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {formatTimestamp(source.lastFetchedAt)}
                     </td>
                   </tr>
                 ))}
