@@ -6,9 +6,10 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 3 — Fetching Foundation.** The monorepo, PostgreSQL schema, source registry,
-and the first ATS fetchers (Greenhouse, Lever, Ashby) are in place. AI scoring, post generation, and
-publishing land in later phases.
+**Current phase: Phase 4 — AI Extraction + Rule Scoring.** The monorepo, PostgreSQL schema, source
+registry, ATS fetchers (Greenhouse, Lever, Ashby), and the normalization pipeline that turns raw
+posts into scored job posts are in place. Social post generation, approval, and publishing land in
+later phases.
 
 ## Requirements
 
@@ -21,9 +22,12 @@ publishing land in later phases.
 - `apps/web` — Next.js dashboard (Tailwind, TypeScript)
 - `apps/api` — Fastify API server
 - `apps/worker` — background worker placeholder and one-time fetch command
-- `packages/shared` — shared constants, types, DTOs, and validation helpers
+- `packages/shared` — shared constants, types, DTOs, keywords, and validation helpers
 - `packages/db` — Drizzle schema, migrations, repositories, and seed scripts
 - `packages/fetchers` — ATS fetchers (Greenhouse, Lever, Ashby) and fetch runs
+- `packages/ai` — job extraction with Gemini and a deterministic rules fallback
+- `packages/scoring` — deterministic job scoring
+- `packages/normalizer` — raw post normalization pipeline
 - `docs/` — project documentation
 
 ## Getting started
@@ -42,11 +46,12 @@ pnpm dev:api     # http://localhost:4000
 pnpm dev:worker  # boots the worker placeholder
 pnpm dev         # all three in parallel
 
-pnpm --filter @foundryjobs/worker fetch:once  # fetch all due sources once, then exit
+pnpm --filter @foundryjobs/worker fetch:once      # fetch all due sources once, then exit
+pnpm --filter @foundryjobs/worker normalize:once  # normalize the next 25 new raw posts
 ```
 
-The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, and the source registry under
-`/v1/sources`.
+The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
+`/v1/sources`, and raw/job post listings under `/v1/raw-posts` and `/v1/job-posts`.
 
 ## Workspace scripts
 
@@ -89,9 +94,24 @@ registered but are reported as `unsupported` until a fetcher is added. Fetch run
 See [docs/02-source-registry.md](docs/02-source-registry.md) for types, platforms, and examples, and
 [docs/03-fetching-pipeline.md](docs/03-fetching-pipeline.md) for the fetching pipeline.
 
+## Normalization
+
+| Method | Path                          | Description                                              |
+| ------ | ----------------------------- | -------------------------------------------------------- |
+| GET    | `/v1/raw-posts`               | List raw posts (`status`, `sourceId`, `limit`, `offset`) |
+| POST   | `/v1/raw-posts/:id/normalize` | Normalize one raw post now                               |
+| GET    | `/v1/job-posts`               | List normalized job posts with latest score              |
+
+Extraction uses Gemini when `GEMINI_API_KEY` is set; otherwise a deterministic rules fallback runs,
+so local development needs no API key. `GEMINI_MODEL` is optional and defaults to
+`gemini-2.5-flash-lite`. See
+[docs/04-normalization-and-scoring.md](docs/04-normalization-and-scoring.md) for the pipeline,
+scoring components, and `shouldPost` logic.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
 - [Database schema](docs/01-database-schema.md)
 - [Source registry](docs/02-source-registry.md)
 - [Fetching pipeline](docs/03-fetching-pipeline.md)
+- [Normalization and scoring](docs/04-normalization-and-scoring.md)
