@@ -1,0 +1,28 @@
+{
+  "name": "foundryjobs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hiring-post fetcher and social-post generator for fresher, intern, and 0-3 YOE tech roles.",
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @foundryjobs/web dev",
+    "dev:api": "pnpm --filter @foundryjobs/api dev",
+    "dev:worker": "pnpm --filter @foundryjobs/worker dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0"
+  }
+}
