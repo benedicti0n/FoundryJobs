@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Notice } from "@/components/notice";
+import { formatDateTime } from "@/lib/format";
 import { SOURCE_TYPES, type SourceDto, type SourceType } from "@foundryjobs/shared";
 
 export const dynamic = "force-dynamic";
@@ -13,17 +14,6 @@ const sourceTypeDescriptions: Record<SourceType, string> = {
   x_search: "Saved X searches for hiring posts (planned).",
   manual: "Submissions added by hand until automated sources cover them.",
 };
-
-function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return "Never";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
-  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-}
 
 type SourcesState =
   | { status: "unconfigured" }
@@ -48,14 +38,6 @@ async function loadSources(): Promise<SourcesState> {
   } catch {
     return { status: "error", message: "Could not reach the FoundryJobs API." };
   }
-}
-
-function Notice({ tone, children }: { tone: "muted" | "warning"; children: ReactNode }) {
-  const className =
-    tone === "warning"
-      ? "rounded-xl border border-amber-900/60 bg-amber-950/30 p-6 text-sm text-amber-200"
-      : "rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-400";
-  return <div className={className}>{children}</div>;
 }
 
 export default async function SourcesPage() {
@@ -131,7 +113,7 @@ export default async function SourcesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-400">
-                      {formatTimestamp(source.lastFetchedAt)}
+                      {formatDateTime(source.lastFetchedAt, "Never")}
                     </td>
                   </tr>
                 ))}
