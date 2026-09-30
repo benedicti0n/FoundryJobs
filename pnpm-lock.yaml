@@ -168,6 +168,28 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/normalizer:
+    dependencies:
+      '@foundryjobs/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@foundryjobs/db':
+        specifier: workspace:*
+        version: link:../db
+      '@foundryjobs/scoring':
+        specifier: workspace:*
+        version: link:../scoring
+      '@foundryjobs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.3
+        version: 26.6.3
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/scoring:
     dependencies:
       '@foundryjobs/shared':
