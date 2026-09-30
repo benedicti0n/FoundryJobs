@@ -8,9 +8,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
+    "fetch:once": "tsx src/index.ts fetch:once",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@foundryjobs/db": "workspace:*",
+    "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/shared": "workspace:*"
   },
   "devDependencies": {
