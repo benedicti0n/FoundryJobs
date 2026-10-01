@@ -158,6 +158,16 @@ export default async function GeneratedPostsPage() {
                       <span className={statusStyles[post.status] ?? "text-slate-300"}>
                         {post.status}
                       </span>
+                      {post.status === "draft" ? (
+                        <p className="mt-1 text-xs">
+                          <Link
+                            href="/approval-queue"
+                            className="text-emerald-300 hover:text-emerald-200"
+                          >
+                            Review in Approval Queue
+                          </Link>
+                        </p>
+                      ) : null}
                       {post.status === "approved" &&
                       ["x", "instagram", "linkedin"].includes(post.platform) ? (
                         <p className="mt-1 text-xs text-slate-500">Buffer-publishable</p>

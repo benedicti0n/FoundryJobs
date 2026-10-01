@@ -2,11 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  submitApproval,
-  updateGeneratedPostText,
-  type ApprovalDecision,
-} from "@/lib/api";
+import { submitApproval, updateGeneratedPostText, type ApprovalDecision } from "@/lib/api";
 
 const APPROVAL_QUEUE_PATH = "/approval-queue";
 
