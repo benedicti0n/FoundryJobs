@@ -6,11 +6,11 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 10 — Buffer Publishing for X, Instagram, and LinkedIn.** The monorepo,
-PostgreSQL schema, source registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization
-pipeline, platform draft generation, the approval workflow, direct Telegram publishing,
-deterministic Instagram card rendering, Cloudflare R2 uploads, and Buffer publishing for X,
-Instagram, and LinkedIn are in place. Scheduling and authentication land in later phases.
+**Current phase: Phase 12 — Scheduler Orchestration.** The monorepo, PostgreSQL schema, source
+registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
+generation, the approval workflow, Telegram and Buffer publishing, Instagram card rendering,
+Cloudflare R2 uploads, and the recurring scheduler for the non-publishing pipeline are in place.
+Publishing stays manual, and authentication lands in a later phase.
 
 ## Requirements
 
@@ -62,6 +62,9 @@ pnpm --filter @foundryjobs/worker publish-telegram:once  # publish approved Tele
 pnpm --filter @foundryjobs/worker render-instagram-cards:once  # render Instagram job cards
 pnpm --filter @foundryjobs/worker upload-instagram-cards:once  # upload cards to Cloudflare R2
 pnpm --filter @foundryjobs/worker publish-buffer:once  # publish approved X/Instagram/LinkedIn drafts via Buffer
+
+# Scheduler for the non-publishing pipeline (disabled unless SCHEDULER_ENABLED=true)
+pnpm --filter @foundryjobs/worker scheduler
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
@@ -190,6 +193,20 @@ Uploads require `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2
 implemented. See [docs/09-r2-instagram-card-upload.md](docs/09-r2-instagram-card-upload.md) for the
 flow and API behaviors.
 
+## Scheduler
+
+| Method | Path                   | Description                                                     |
+| ------ | ---------------------- | --------------------------------------------------------------- |
+| GET    | `/v1/scheduler/status` | Static scheduler job configuration (worker owns the live state) |
+
+The worker scheduler runs `fetch_due_sources`, `normalize_raw_posts`, `generate_posts`,
+`render_instagram_cards`, and `upload_instagram_cards` on intervals configured through
+`SCHEDULER_*` environment variables, and it never runs publishing commands. It is disabled unless
+`SCHEDULER_ENABLED=true`, skips the upload job when R2 is not configured, and prevents overlapping
+runs of the same job. Run exactly one scheduler instance per environment; live state is in the
+worker logs. See [docs/12-scheduler.md](docs/12-scheduler.md) for intervals, env vars, and
+deployment notes.
+
 ## Buffer publishing
 
 | Method | Path                                     | Description                                     |
@@ -217,3 +234,4 @@ pipeline and is never routed through Buffer. See
 - [R2 Instagram card uploads](docs/09-r2-instagram-card-upload.md)
 - [Buffer publishing](docs/10-buffer-publishing.md)
 - [Dashboard approval actions](docs/11-dashboard-approval-actions.md)
+- [Scheduler orchestration](docs/12-scheduler.md)
