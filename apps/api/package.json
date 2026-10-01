@@ -14,6 +14,7 @@
     "@foundryjobs/db": "workspace:*",
     "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/normalizer": "workspace:*",
+    "@foundryjobs/post-generator": "workspace:*",
     "@foundryjobs/shared": "workspace:*",
     "fastify": "^5.12.5"
   },
