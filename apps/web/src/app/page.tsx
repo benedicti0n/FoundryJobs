@@ -45,6 +45,12 @@ const sections: Section[] = [
     href: "/publish-events",
     badge: "Open",
   },
+  {
+    title: "Scheduler",
+    description: "Recurring pipeline runs inside the worker.",
+    href: "/scheduler",
+    badge: "Open",
+  },
 ];
 
 const cardClassName =
@@ -73,7 +79,7 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-5xl flex-col gap-12 px-6 py-16">
       <header className="space-y-4">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">
-          Phase 7 · Telegram Publishing
+          Phase 12 · Scheduler
         </p>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{APP_NAME}</h1>
         <p className="max-w-2xl text-lg text-slate-300">
