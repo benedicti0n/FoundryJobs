@@ -19,7 +19,8 @@ const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi;
 const BATCH_YEAR_PATTERN = /\b20(2[3-9]|3[0-5])\b/g;
 const QUALIFICATION_PATTERN =
-  /\b(?:b\.?\s?tech|b\.e|bachelor|b\.?\s?sc|mca|m\.?\s?tech|master(?:'s|s)?|bca|diploma|degree)/i;
+  /\b(?:b\.?\s?tech|b\.e\b|bachelor|b\.?\s?sc|m\.?\s?sc|mca\b|m\.?\s?tech|master(?:'s|s)?\b|bca\b|diploma|degree\s+(?:in|required|preferred|or equivalent))/i;
+const BE_DEGREE_PATTERN = /\bBE\b/;
 const SALARY_PATTERNS = [
   /(?:₹|rs\.?\s?|inr\s?)[\d,.]+\s?(?:lpa|lakhs?|lakh|k|per\s+(?:month|annum))?/i,
   /\b[\d.]+\s?(?:lpa|lakhs?|lakh)\b/i,
@@ -153,7 +154,7 @@ function extractQualification(text: string): string | null {
     if (trimmed.length === 0) {
       continue;
     }
-    if (QUALIFICATION_PATTERN.test(trimmed)) {
+    if (QUALIFICATION_PATTERN.test(trimmed) || BE_DEGREE_PATTERN.test(trimmed)) {
       return trimmed.length > 200 ? `${trimmed.slice(0, 197)}...` : trimmed;
     }
   }
