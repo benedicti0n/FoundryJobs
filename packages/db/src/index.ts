@@ -4,6 +4,7 @@ export * from "./repositories/approvals";
 export * from "./repositories/generated-posts";
 export * from "./repositories/job-posts";
 export * from "./repositories/prompt-runs";
+export * from "./repositories/publish-events";
 export * from "./repositories/raw-posts";
 export * from "./repositories/sources";
 export * as schema from "./schema";
