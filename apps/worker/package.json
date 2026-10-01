@@ -15,6 +15,7 @@
     "render-instagram-cards:once": "tsx src/index.ts render-instagram-cards:once",
     "upload-instagram-cards:once": "tsx src/index.ts upload-instagram-cards:once",
     "publish-buffer:once": "tsx src/index.ts publish-buffer:once",
+    "scheduler": "tsx src/index.ts scheduler",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

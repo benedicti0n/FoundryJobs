@@ -11,6 +11,7 @@ import { generatePostsForReadyJobs } from "@foundryjobs/post-generator";
 import { publishApprovedTelegramPosts } from "@foundryjobs/publisher";
 import { APP_NAME, isEnvSet } from "@foundryjobs/shared";
 import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
+import { WorkerScheduler, isSchedulerEnabled, readSchedulerConfig } from "./scheduler";
 
 const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
 
@@ -294,6 +295,42 @@ async function runPublishBufferOnce(): Promise<void> {
   }
 }
 
+async function runScheduler(): Promise<void> {
+  if (!isSchedulerEnabled()) {
+    console.log(
+      `${APP_NAME} scheduler is disabled. Set SCHEDULER_ENABLED=true to enable scheduled jobs.`,
+    );
+    return;
+  }
+
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run the scheduler. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const scheduler = new WorkerScheduler(readSchedulerConfig());
+  scheduler.logBoot();
+
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+    console.log(`${APP_NAME} scheduler received ${signal}, shutting down`);
+    await scheduler.stop();
+    await closeDatabase();
+    process.exit(0);
+  };
+
+  process.once("SIGINT", () => {
+    void shutdown("SIGINT");
+  });
+  process.once("SIGTERM", () => {
+    void shutdown("SIGTERM");
+  });
+
+  scheduler.start();
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -330,6 +367,8 @@ if (command === "fetch:once") {
   await runUploadInstagramCardsOnce();
 } else if (command === "publish-buffer:once") {
   await runPublishBufferOnce();
+} else if (command === "scheduler") {
+  await runScheduler();
 } else {
   startWorkerLoop();
 }
