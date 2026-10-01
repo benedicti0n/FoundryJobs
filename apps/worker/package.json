@@ -11,6 +11,7 @@
     "fetch:once": "tsx src/index.ts fetch:once",
     "normalize:once": "tsx src/index.ts normalize:once",
     "generate-posts:once": "tsx src/index.ts generate-posts:once",
+    "publish-telegram:once": "tsx src/index.ts publish-telegram:once",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
     "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/normalizer": "workspace:*",
     "@foundryjobs/post-generator": "workspace:*",
+    "@foundryjobs/publisher": "workspace:*",
     "@foundryjobs/shared": "workspace:*"
   },
   "devDependencies": {

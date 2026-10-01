@@ -4,6 +4,7 @@ import { closeDatabase } from "@foundryjobs/db";
 import { fetchDueSources } from "@foundryjobs/fetchers";
 import { normalizeNewRawPosts } from "@foundryjobs/normalizer";
 import { generatePostsForReadyJobs } from "@foundryjobs/post-generator";
+import { publishApprovedTelegramPosts } from "@foundryjobs/publisher";
 import { APP_NAME, isEnvSet } from "@foundryjobs/shared";
 
 const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
@@ -131,6 +132,46 @@ async function runGeneratePostsOnce(): Promise<void> {
   }
 }
 
+async function runPublishTelegramOnce(): Promise<void> {
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run publish-telegram:once. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!isEnvSet("TELEGRAM_BOT_TOKEN") || !isEnvSet("TELEGRAM_CHAT_ID")) {
+    console.error(
+      "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are required to run publish-telegram:once. No posts were published.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const limit = parseWorkerLimit(process.env.PUBLISH_TELEGRAM_LIMIT, 10);
+
+  try {
+    const summary = await publishApprovedTelegramPosts(limit);
+    console.log(`${APP_NAME} publish-telegram run complete (limit ${limit})`);
+    console.log(
+      `Processed ${summary.processedCount} approved Telegram posts (published ${summary.publishedCount}, skipped ${summary.skippedCount}, failed ${summary.failedCount})`,
+    );
+
+    for (const result of summary.results) {
+      const external = result.externalPostId ? ` external=${result.externalPostId}` : "";
+      const link = result.publishedUrl ? ` ${result.publishedUrl}` : "";
+      const error = result.errorMessage ? ` — ${result.errorMessage}` : "";
+      console.log(`  [${result.status}] ${result.generatedPostId}${external}${link}${error}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -159,6 +200,8 @@ if (command === "fetch:once") {
   await runNormalizeOnce();
 } else if (command === "generate-posts:once") {
   await runGeneratePostsOnce();
+} else if (command === "publish-telegram:once") {
+  await runPublishTelegramOnce();
 } else {
   startWorkerLoop();
 }
