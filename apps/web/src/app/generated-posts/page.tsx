@@ -128,13 +128,28 @@ export default async function GeneratedPostsPage() {
                     </td>
                     <td className="px-4 py-3">
                       {post.imageUrl ? (
-                        <a href={post.imageUrl} target="_blank" rel="noreferrer">
-                          <img
-                            src={post.imageUrl}
-                            alt={`Card preview for ${post.platform} draft`}
-                            className="h-14 w-14 rounded-lg border border-slate-800 object-cover"
-                          />
-                        </a>
+                        <div className="space-y-1">
+                          <a href={post.imageUrl} target="_blank" rel="noreferrer">
+                            <img
+                              src={post.imageUrl}
+                              alt={`Card preview for ${post.platform} draft`}
+                              className="h-14 w-14 rounded-lg border border-slate-800 object-cover"
+                            />
+                          </a>
+                          <a
+                            href={post.imageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={post.imageUrl}
+                            className={`block max-w-[160px] truncate text-xs ${
+                              post.imageUrl.startsWith("http")
+                                ? "text-emerald-300 hover:text-emerald-200"
+                                : "text-slate-500 hover:text-slate-400"
+                            }`}
+                          >
+                            {post.imageUrl}
+                          </a>
+                        </div>
                       ) : (
                         <span className="text-slate-600">—</span>
                       )}
