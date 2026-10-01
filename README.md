@@ -6,10 +6,10 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 5 — Post Generation.** The monorepo, PostgreSQL schema, source registry, ATS
-fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, and platform-specific draft
-generation for Telegram, X, Instagram, and LinkedIn are in place. Approval, publishing, and image
-generation land in later phases.
+**Current phase: Phase 6 — Approval Queue.** The monorepo, PostgreSQL schema, source registry, ATS
+fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, and the
+approval workflow (approve, reject, or request edits) are in place. Publishing and image generation
+land in later phases.
 
 ## Requirements
 
@@ -120,9 +120,23 @@ scoring components, and `shouldPost` logic.
 
 Drafts are produced by deterministic templates (no OpenAI key required) for Telegram, X, Instagram,
 and LinkedIn, and stored with status `draft`. **Nothing is published yet**: there are no Telegram, X,
-Instagram, or LinkedIn API calls, and no approval flow in this phase. See
+Instagram, or LinkedIn API calls. See
 [docs/05-post-generation.md](docs/05-post-generation.md) for templates, platform rules, and X
 character limits.
+
+## Approval queue
+
+| Method | Path                               | Description                                  |
+| ------ | ---------------------------------- | -------------------------------------------- |
+| GET    | `/v1/approval-queue`               | List drafts waiting for review               |
+| GET    | `/v1/generated-posts/:id`          | Fetch one generated post                     |
+| PATCH  | `/v1/generated-posts/:id/text`     | Edit draft text without changing its status  |
+| POST   | `/v1/generated-posts/:id/approval` | Approve, reject, or request edits on a draft |
+
+Approved and rejected drafts leave the default queue, and every decision is recorded in the
+`approvals` table. The dashboard page at `/approval-queue` renders the queue read-only; actions are
+performed through the API. Publishing remains a separate, later phase. See
+[docs/06-approval-queue.md](docs/06-approval-queue.md) for the lifecycle and examples.
 
 ## Documentation
 
@@ -132,3 +146,4 @@ character limits.
 - [Fetching pipeline](docs/03-fetching-pipeline.md)
 - [Normalization and scoring](docs/04-normalization-and-scoring.md)
 - [Post generation](docs/05-post-generation.md)
+- [Approval queue](docs/06-approval-queue.md)
