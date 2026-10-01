@@ -4,6 +4,7 @@ import {
   isUuid,
   type EmploymentType,
   type GeneratedPostDto,
+  type GeneratedPostPlatform,
   type GeneratedPostStatus,
   type RenderableInstagramPostDto,
   type WorkMode,
@@ -24,11 +25,16 @@ function requireDatabase(): Database {
   return getDatabase();
 }
 
+export type RenderableInstagramPost = RenderableInstagramPostDto & {
+  platform: GeneratedPostPlatform;
+};
+
 type RenderableRow = {
   generatedPostId: string;
   jobPostId: string;
   textContent: string;
   imageUrl: string | null;
+  platform: string;
   generatedPostStatus: string;
   companyName: string | null;
   roleTitle: string;
@@ -43,12 +49,13 @@ type RenderableRow = {
   scoreShouldPost: boolean | null;
 };
 
-function toRenderableDto(row: RenderableRow): RenderableInstagramPostDto {
+function toRenderableDto(row: RenderableRow): RenderableInstagramPost {
   return {
     generatedPostId: row.generatedPostId,
     jobPostId: row.jobPostId,
     textContent: row.textContent,
     imageUrl: row.imageUrl,
+    platform: row.platform as GeneratedPostPlatform,
     generatedPostStatus: row.generatedPostStatus as GeneratedPostStatus,
     companyName: row.companyName,
     roleTitle: row.roleTitle,
@@ -77,6 +84,7 @@ function buildRenderableSelection(database: Database) {
       jobPostId: generatedPosts.jobPostId,
       textContent: generatedPosts.textContent,
       imageUrl: generatedPosts.imageUrl,
+      platform: generatedPosts.platform,
       generatedPostStatus: generatedPosts.status,
       companyName: jobPosts.companyName,
       roleTitle: jobPosts.roleTitle,
@@ -97,7 +105,7 @@ function buildRenderableSelection(database: Database) {
 
 export async function listInstagramPostsNeedingCards(
   limit = CARD_LIST_DEFAULT_LIMIT,
-): Promise<RenderableInstagramPostDto[]> {
+): Promise<RenderableInstagramPost[]> {
   const database = requireDatabase();
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), CARD_LIST_MAX_LIMIT);
 
@@ -117,7 +125,7 @@ export async function listInstagramPostsNeedingCards(
 
 export async function getRenderableInstagramPost(
   generatedPostId: string,
-): Promise<RenderableInstagramPostDto | null> {
+): Promise<RenderableInstagramPost | null> {
   const database = requireDatabase();
   if (!isUuid(generatedPostId)) {
     return null;
