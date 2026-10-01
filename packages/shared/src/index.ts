@@ -4,5 +4,6 @@ export * from "./env";
 export * from "./fetching";
 export * from "./generated-posts";
 export * from "./normalization";
+export * from "./publishing";
 export * from "./sources";
 export * from "./types";
