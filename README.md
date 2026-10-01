@@ -146,9 +146,11 @@ character limits.
 | POST   | `/v1/generated-posts/:id/approval` | Approve, reject, or request edits on a draft |
 
 Approved and rejected drafts leave the default queue, and every decision is recorded in the
-`approvals` table. The dashboard page at `/approval-queue` renders the queue read-only; actions are
-performed through the API. See [docs/06-approval-queue.md](docs/06-approval-queue.md) for the
-lifecycle and examples.
+`approvals` table. The dashboard page at `/approval-queue` can now edit draft text and approve,
+reject, or mark drafts as needing work directly in the browser; it needs `API_BASE_URL` and records
+decisions as `decidedBy: dashboard`. See [docs/06-approval-queue.md](docs/06-approval-queue.md) for
+the lifecycle and [docs/11-dashboard-approval-actions.md](docs/11-dashboard-approval-actions.md) for
+the dashboard actions.
 
 ## Telegram publishing
 
@@ -214,3 +216,4 @@ pipeline and is never routed through Buffer. See
 - [Instagram card renderer](docs/08-instagram-card-renderer.md)
 - [R2 Instagram card uploads](docs/09-r2-instagram-card-upload.md)
 - [Buffer publishing](docs/10-buffer-publishing.md)
+- [Dashboard approval actions](docs/11-dashboard-approval-actions.md)
