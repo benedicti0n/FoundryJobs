@@ -41,6 +41,9 @@ importers:
       '@foundryjobs/post-generator':
         specifier: workspace:*
         version: link:../../packages/post-generator
+      '@foundryjobs/publisher':
+        specifier: workspace:*
+        version: link:../../packages/publisher
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared

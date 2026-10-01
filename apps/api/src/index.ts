@@ -4,6 +4,7 @@ import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
 import { registerApprovalRoutes } from "./routes/approvals";
 import { registerGeneratedPostRoutes } from "./routes/generated-posts";
 import { registerJobPostRoutes } from "./routes/job-posts";
+import { registerPublishEventRoutes } from "./routes/publish-events";
 import { registerRawPostRoutes } from "./routes/raw-posts";
 import { registerSourceRoutes } from "./routes/sources";
 
@@ -79,4 +80,5 @@ await registerRawPostRoutes(app);
 await registerJobPostRoutes(app);
 await registerGeneratedPostRoutes(app);
 await registerApprovalRoutes(app);
+await registerPublishEventRoutes(app);
 await start();
