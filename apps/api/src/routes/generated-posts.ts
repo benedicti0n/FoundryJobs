@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { renderInstagramCard } from "@foundryjobs/card-renderer";
 import {
   getJobPostWithLatestScore,
+  getRenderableInstagramPost,
   listGeneratedPosts,
   type GeneratedPostListQuery,
 } from "@foundryjobs/db";
@@ -129,6 +131,36 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
       }
 
       const result = await generatePostsForJob(id);
+      return { data: result };
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    "/v1/generated-posts/:id/render/instagram-card",
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return reply.status(400).send({ error: { message: "id must be a valid UUID" } });
+      }
+
+      const body =
+        typeof request.body === "object" && request.body !== null
+          ? (request.body as Record<string, unknown>)
+          : {};
+      let regenerate = false;
+      if (body.regenerate !== undefined) {
+        if (typeof body.regenerate !== "boolean") {
+          return reply.status(400).send({ error: { message: "regenerate must be a boolean" } });
+        }
+        regenerate = body.regenerate;
+      }
+
+      const generatedPost = await getRenderableInstagramPost(id);
+      if (!generatedPost) {
+        return reply.status(404).send({ error: { message: "Generated post not found" } });
+      }
+
+      const result = await renderInstagramCard(id, { regenerate });
       return { data: result };
     },
   );

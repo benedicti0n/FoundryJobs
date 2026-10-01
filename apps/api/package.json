@@ -11,13 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@foundryjobs/card-renderer": "workspace:*",
     "@foundryjobs/db": "workspace:*",
     "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/normalizer": "workspace:*",
     "@foundryjobs/post-generator": "workspace:*",
     "@foundryjobs/publisher": "workspace:*",
     "@foundryjobs/shared": "workspace:*",
-    "fastify": "^5.12.5"
+    "fastify": "^5.12.5",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

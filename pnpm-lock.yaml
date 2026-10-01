@@ -29,6 +29,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@foundryjobs/card-renderer':
+        specifier: workspace:*
+        version: link:../../packages/card-renderer
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -50,6 +53,9 @@ importers:
       fastify:
         specifier: ^5.12.5
         version: 5.12.5
+      sharp:
+        specifier: ^0.35.5
+        version: 0.35.5(@types/node@26.6.3)
     devDependencies:
       '@types/node':
         specifier: ^26.6.3
