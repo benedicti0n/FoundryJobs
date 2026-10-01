@@ -18,7 +18,7 @@ const JOB_POST_LIST_MAX_LIMIT = 200;
 const NORMALIZATION_DATABASE_ERROR =
   "DATABASE_URL is required for normalization repository operations";
 
-type JobPostRow = typeof jobPosts.$inferSelect;
+export type JobPostRow = typeof jobPosts.$inferSelect;
 type JobScoreRow = typeof jobScores.$inferSelect;
 
 export type JobPostListQuery = {
@@ -67,7 +67,7 @@ export type JobPostDto = {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
-  latestScore?: JobScoreDto | null;
+  latestScore: JobScoreDto | null;
 };
 
 function requireDatabase(): Database {
@@ -104,7 +104,7 @@ function toJobScoreDto(row: JobScoreRow): JobScoreDto {
   };
 }
 
-function toJobPostDto(row: JobPostRow, latestScore?: JobScoreDto | null): JobPostDto {
+export function toJobPostDto(row: JobPostRow, latestScore?: JobScoreDto | null): JobPostDto {
   return {
     id: row.id,
     rawPostId: row.rawPostId,
@@ -128,7 +128,7 @@ function toJobPostDto(row: JobPostRow, latestScore?: JobScoreDto | null): JobPos
     status: row.status as JobStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    ...(latestScore !== undefined ? { latestScore } : {}),
+    latestScore: latestScore ?? null,
   };
 }
 
