@@ -19,7 +19,7 @@ const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi;
 const BATCH_YEAR_PATTERN = /\b20(2[3-9]|3[0-5])\b/g;
 const QUALIFICATION_PATTERN =
-  /(b\.?tech|b\.?e\b|bachelor|b\.?sc|mca|m\.?tech|master|bca|diploma|degree)/i;
+  /\b(?:b\.?\s?tech|b\.e|bachelor|b\.?\s?sc|mca|m\.?\s?tech|master(?:'s|s)?|bca|diploma|degree)/i;
 const SALARY_PATTERNS = [
   /(?:₹|rs\.?\s?|inr\s?)[\d,.]+\s?(?:lpa|lakhs?|lakh|k|per\s+(?:month|annum))?/i,
   /\b[\d.]+\s?(?:lpa|lakhs?|lakh)\b/i,
@@ -70,17 +70,17 @@ function deriveRoleCategory(title: string): string | null {
   if (/back[\s-]?end|\bapi\b|server|node/.test(haystack)) {
     return "Backend";
   }
-  if (/devops|\bsre\b|cloud|infrastructure|platform/.test(haystack)) {
-    return "DevOps";
-  }
-  if (/android|\bios\b|mobile|flutter|react native/.test(haystack)) {
-    return "Mobile";
-  }
   if (/\bml\b|machine learning|\bai\b|deep learning|\bnlp\b|data scien/.test(haystack)) {
     return "AI/ML";
   }
   if (/\bdata\b|analyst|analytics/.test(haystack)) {
     return "Data";
+  }
+  if (/devops|\bsre\b|cloud|infrastructure|platform/.test(haystack)) {
+    return "DevOps";
+  }
+  if (/android|\bios\b|mobile|flutter|react native/.test(haystack)) {
+    return "Mobile";
   }
   if (/\bqa\b|test|sdet|quality/.test(haystack)) {
     return "QA";
