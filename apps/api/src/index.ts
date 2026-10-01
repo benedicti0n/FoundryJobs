@@ -5,6 +5,7 @@ import { registerApprovalRoutes } from "./routes/approvals";
 import { registerGeneratedPostRoutes } from "./routes/generated-posts";
 import { registerJobPostRoutes } from "./routes/job-posts";
 import { registerPublishEventRoutes } from "./routes/publish-events";
+import { registerSchedulerRoutes } from "./routes/scheduler";
 import { registerRawPostRoutes } from "./routes/raw-posts";
 import { registerSourceRoutes } from "./routes/sources";
 
@@ -81,4 +82,5 @@ await registerJobPostRoutes(app);
 await registerGeneratedPostRoutes(app);
 await registerApprovalRoutes(app);
 await registerPublishEventRoutes(app);
+await registerSchedulerRoutes(app);
 await start();
