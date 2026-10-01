@@ -80,8 +80,9 @@ export default async function PublishEventsPage() {
           Delivery attempts and results for platform publishing.
         </p>
         <p className="text-sm text-slate-500">
-          Only approved Telegram drafts are published in this phase. Every attempt is recorded here,
-          whether it succeeds or fails.
+          Approved Telegram drafts are published through the direct Telegram bot, while X,
+          Instagram, and LinkedIn drafts go through Buffer. Every attempt is recorded here, whether
+          it succeeds or fails.
         </p>
       </header>
 

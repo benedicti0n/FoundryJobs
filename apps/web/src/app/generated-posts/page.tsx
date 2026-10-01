@@ -158,6 +158,15 @@ export default async function GeneratedPostsPage() {
                       <span className={statusStyles[post.status] ?? "text-slate-300"}>
                         {post.status}
                       </span>
+                      {post.status === "approved" &&
+                      ["x", "instagram", "linkedin"].includes(post.platform) ? (
+                        <p className="mt-1 text-xs text-slate-500">Buffer-publishable</p>
+                      ) : null}
+                      {post.platform === "instagram" && post.imageUrl?.startsWith("/generated") ? (
+                        <p className="mt-1 text-xs text-amber-300">
+                          Upload to R2 before publishing.
+                        </p>
+                      ) : null}
                     </td>
                     <td className="max-w-md px-4 py-3 text-slate-300">
                       {previewText(post.textContent)}
