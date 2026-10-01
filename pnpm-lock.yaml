@@ -32,6 +32,12 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1143.0
         version: 3.1143.0
+      '@foundryjobs/buffer':
+        specifier: workspace:*
+        version: link:../../packages/buffer
+      '@foundryjobs/buffer-publisher':
+        specifier: workspace:*
+        version: link:../../packages/buffer-publisher
       '@foundryjobs/card-renderer':
         specifier: workspace:*
         version: link:../../packages/card-renderer

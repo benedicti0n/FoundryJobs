@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1143.0",
+    "@foundryjobs/buffer": "workspace:*",
+    "@foundryjobs/buffer-publisher": "workspace:*",
     "@foundryjobs/card-renderer": "workspace:*",
     "@foundryjobs/card-uploader": "workspace:*",
     "@foundryjobs/db": "workspace:*",

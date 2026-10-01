@@ -1,5 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { BUFFER_CONFIG_ERROR } from "@foundryjobs/buffer";
+import { publishBufferGeneratedPost } from "@foundryjobs/buffer-publisher";
 import {
+  getBufferPublishablePost,
   getPublishableGeneratedPost,
   listPublishEvents,
   type PublishEventListQuery,
@@ -134,6 +137,27 @@ export async function registerPublishEventRoutes(app: FastifyInstance): Promise<
       }
 
       const result = await publishTelegramGeneratedPost(id);
+      return { data: result };
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    "/v1/generated-posts/:id/publish/buffer",
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return reply.status(400).send({ error: { message: "id must be a valid UUID" } });
+      }
+
+      const generatedPost = await getBufferPublishablePost(id);
+      if (!generatedPost) {
+        return reply.status(404).send({ error: { message: "Generated post not found" } });
+      }
+
+      const result = await publishBufferGeneratedPost(id);
+      if (result.status === "failed" && result.errorMessage === BUFFER_CONFIG_ERROR) {
+        return reply.status(500).send({ error: { message: BUFFER_CONFIG_ERROR } });
+      }
       return { data: result };
     },
   );
