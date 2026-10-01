@@ -6,10 +6,10 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 6 — Approval Queue.** The monorepo, PostgreSQL schema, source registry, ATS
-fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, and the
-approval workflow (approve, reject, or request edits) are in place. Publishing and image generation
-land in later phases.
+**Current phase: Phase 7 — Telegram Publishing.** The monorepo, PostgreSQL schema, source registry,
+ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, the
+approval workflow, and Telegram publishing of approved drafts with a `publish_events` audit trail
+are in place. X, Instagram, and LinkedIn publishing and image generation land in later phases.
 
 ## Requirements
 
@@ -29,6 +29,8 @@ land in later phases.
 - `packages/scoring` — deterministic job scoring
 - `packages/normalizer` — raw post normalization pipeline
 - `packages/post-generator` — deterministic platform draft templates and generation runs
+- `packages/telegram` — Telegram Bot API client and send helper
+- `packages/publisher` — approved-draft publishing pipeline with publish_events recording
 - `docs/` — project documentation
 
 ## Getting started
@@ -50,6 +52,7 @@ pnpm dev         # all three in parallel
 pnpm --filter @foundryjobs/worker fetch:once           # fetch all due sources once, then exit
 pnpm --filter @foundryjobs/worker normalize:once       # normalize the next 25 new raw posts
 pnpm --filter @foundryjobs/worker generate-posts:once  # generate drafts for ready job posts
+pnpm --filter @foundryjobs/worker publish-telegram:once  # publish approved Telegram drafts
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
@@ -135,8 +138,21 @@ character limits.
 
 Approved and rejected drafts leave the default queue, and every decision is recorded in the
 `approvals` table. The dashboard page at `/approval-queue` renders the queue read-only; actions are
-performed through the API. Publishing remains a separate, later phase. See
-[docs/06-approval-queue.md](docs/06-approval-queue.md) for the lifecycle and examples.
+performed through the API. See [docs/06-approval-queue.md](docs/06-approval-queue.md) for the
+lifecycle and examples.
+
+## Telegram publishing
+
+| Method | Path                                       | Description                         |
+| ------ | ------------------------------------------ | ----------------------------------- |
+| GET    | `/v1/publish-events`                       | List delivery attempts and results  |
+| POST   | `/v1/generated-posts/:id/publish/telegram` | Publish one approved Telegram draft |
+
+Only approved Telegram drafts are published, using `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Every
+attempt is recorded in `publish_events`; successful posts are marked `published` and failed Telegram
+sends are marked `failed`. The publish endpoints have no authentication yet, so do not expose them
+publicly. See [docs/07-telegram-publishing.md](docs/07-telegram-publishing.md) for the flow,
+idempotency rules, and safety notes.
 
 ## Documentation
 
@@ -147,3 +163,4 @@ performed through the API. Publishing remains a separate, later phase. See
 - [Normalization and scoring](docs/04-normalization-and-scoring.md)
 - [Post generation](docs/05-post-generation.md)
 - [Approval queue](docs/06-approval-queue.md)
+- [Telegram publishing](docs/07-telegram-publishing.md)
