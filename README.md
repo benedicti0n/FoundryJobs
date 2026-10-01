@@ -6,10 +6,11 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 7 — Telegram Publishing.** The monorepo, PostgreSQL schema, source registry,
-ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, the
-approval workflow, and Telegram publishing of approved drafts with a `publish_events` audit trail
-are in place. X, Instagram, and LinkedIn publishing and image generation land in later phases.
+**Current phase: Phase 8 — Instagram Card Renderer.** The monorepo, PostgreSQL schema, source
+registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
+generation, the approval workflow, Telegram publishing, and deterministic 1080x1080 Instagram job
+card rendering are in place. X, Instagram, and LinkedIn publishing plus R2 uploads land in later
+phases.
 
 ## Requirements
 
@@ -31,6 +32,7 @@ are in place. X, Instagram, and LinkedIn publishing and image generation land in
 - `packages/post-generator` — deterministic platform draft templates and generation runs
 - `packages/telegram` — Telegram Bot API client and send helper
 - `packages/publisher` — approved-draft publishing pipeline with publish_events recording
+- `packages/card-renderer` — deterministic 1080x1080 Instagram job card renderer (SVG + sharp)
 - `docs/` — project documentation
 
 ## Getting started
@@ -53,6 +55,7 @@ pnpm --filter @foundryjobs/worker fetch:once           # fetch all due sources o
 pnpm --filter @foundryjobs/worker normalize:once       # normalize the next 25 new raw posts
 pnpm --filter @foundryjobs/worker generate-posts:once  # generate drafts for ready job posts
 pnpm --filter @foundryjobs/worker publish-telegram:once  # publish approved Telegram drafts
+pnpm --filter @foundryjobs/worker render-instagram-cards:once  # render Instagram job cards
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
@@ -154,6 +157,18 @@ sends are marked `failed`. The publish endpoints have no authentication yet, so 
 publicly. See [docs/07-telegram-publishing.md](docs/07-telegram-publishing.md) for the flow,
 idempotency rules, and safety notes.
 
+## Instagram cards
+
+| Method | Path                                            | Description                                   |
+| ------ | ----------------------------------------------- | --------------------------------------------- |
+| POST   | `/v1/generated-posts/:id/render/instagram-card` | Render a 1080x1080 card for an Instagram post |
+
+Cards are rendered deterministically from an SVG template and rasterized with `sharp` (no browser
+and no AI image generation). PNGs are written to `apps/web/public/generated/instagram-cards/` and
+served at `/generated/instagram-cards/...`; they are local files for now and are not uploaded to
+R2. `regenerate: true` in the request body overwrites an existing card. See
+[docs/08-instagram-card-renderer.md](docs/08-instagram-card-renderer.md) for the design and flow.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
@@ -164,3 +179,4 @@ idempotency rules, and safety notes.
 - [Post generation](docs/05-post-generation.md)
 - [Approval queue](docs/06-approval-queue.md)
 - [Telegram publishing](docs/07-telegram-publishing.md)
+- [Instagram card renderer](docs/08-instagram-card-renderer.md)
