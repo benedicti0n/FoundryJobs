@@ -6,11 +6,11 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 9 — R2 Instagram Card Uploads.** The monorepo, PostgreSQL schema, source
-registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
-generation, the approval workflow, Telegram publishing, deterministic 1080x1080 Instagram card
-rendering, and Cloudflare R2 upload of those cards are in place. Instagram publishing and the
-remaining platforms land in later phases.
+**Current phase: Phase 10 — Buffer Publishing for X, Instagram, and LinkedIn.** The monorepo,
+PostgreSQL schema, source registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization
+pipeline, platform draft generation, the approval workflow, direct Telegram publishing,
+deterministic Instagram card rendering, Cloudflare R2 uploads, and Buffer publishing for X,
+Instagram, and LinkedIn are in place. Scheduling and authentication land in later phases.
 
 ## Requirements
 
@@ -35,6 +35,8 @@ remaining platforms land in later phases.
 - `packages/card-renderer` — deterministic 1080x1080 Instagram job card renderer (SVG + sharp)
 - `packages/storage` — Cloudflare R2 (S3-compatible) upload client
 - `packages/card-uploader` — Instagram card upload pipeline from local files to R2
+- `packages/buffer` — Buffer API client for X, Instagram, and LinkedIn publishing
+- `packages/buffer-publisher` — approved-draft Buffer publishing pipeline
 - `docs/` — project documentation
 
 ## Getting started
@@ -59,6 +61,7 @@ pnpm --filter @foundryjobs/worker generate-posts:once  # generate drafts for rea
 pnpm --filter @foundryjobs/worker publish-telegram:once  # publish approved Telegram drafts
 pnpm --filter @foundryjobs/worker render-instagram-cards:once  # render Instagram job cards
 pnpm --filter @foundryjobs/worker upload-instagram-cards:once  # upload cards to Cloudflare R2
+pnpm --filter @foundryjobs/worker publish-buffer:once  # publish approved X/Instagram/LinkedIn drafts via Buffer
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
@@ -185,6 +188,19 @@ Uploads require `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2
 implemented. See [docs/09-r2-instagram-card-upload.md](docs/09-r2-instagram-card-upload.md) for the
 flow and API behaviors.
 
+## Buffer publishing
+
+| Method | Path                                     | Description                                     |
+| ------ | ---------------------------------------- | ----------------------------------------------- |
+| POST   | `/v1/generated-posts/:id/publish/buffer` | Publish one approved X/Instagram/LinkedIn draft |
+
+Buffer publishing requires `BUFFER_ACCESS_TOKEN` plus the matching `BUFFER_PROFILE_ID_X`,
+`BUFFER_PROFILE_ID_INSTAGRAM`, or `BUFFER_PROFILE_ID_LINKEDIN` value. Only approved posts are
+published, Instagram requires a public `http(s)` image URL (upload the card to R2 first), and every
+attempt is recorded in the shared `publish_events` audit trail. Telegram stays on its direct bot
+pipeline and is never routed through Buffer. See
+[docs/10-buffer-publishing.md](docs/10-buffer-publishing.md) for the flow and API behaviors.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
@@ -197,3 +213,4 @@ flow and API behaviors.
 - [Telegram publishing](docs/07-telegram-publishing.md)
 - [Instagram card renderer](docs/08-instagram-card-renderer.md)
 - [R2 Instagram card uploads](docs/09-r2-instagram-card-upload.md)
+- [Buffer publishing](docs/10-buffer-publishing.md)
