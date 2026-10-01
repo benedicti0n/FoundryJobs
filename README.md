@@ -6,10 +6,10 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 4 — AI Extraction + Rule Scoring.** The monorepo, PostgreSQL schema, source
-registry, ATS fetchers (Greenhouse, Lever, Ashby), and the normalization pipeline that turns raw
-posts into scored job posts are in place. Social post generation, approval, and publishing land in
-later phases.
+**Current phase: Phase 5 — Post Generation.** The monorepo, PostgreSQL schema, source registry, ATS
+fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, and platform-specific draft
+generation for Telegram, X, Instagram, and LinkedIn are in place. Approval, publishing, and image
+generation land in later phases.
 
 ## Requirements
 
@@ -28,6 +28,7 @@ later phases.
 - `packages/ai` — job extraction with Gemini and a deterministic rules fallback
 - `packages/scoring` — deterministic job scoring
 - `packages/normalizer` — raw post normalization pipeline
+- `packages/post-generator` — deterministic platform draft templates and generation runs
 - `docs/` — project documentation
 
 ## Getting started
@@ -46,12 +47,14 @@ pnpm dev:api     # http://localhost:4000
 pnpm dev:worker  # boots the worker placeholder
 pnpm dev         # all three in parallel
 
-pnpm --filter @foundryjobs/worker fetch:once      # fetch all due sources once, then exit
-pnpm --filter @foundryjobs/worker normalize:once  # normalize the next 25 new raw posts
+pnpm --filter @foundryjobs/worker fetch:once           # fetch all due sources once, then exit
+pnpm --filter @foundryjobs/worker normalize:once       # normalize the next 25 new raw posts
+pnpm --filter @foundryjobs/worker generate-posts:once  # generate drafts for ready job posts
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
-`/v1/sources`, and raw/job post listings under `/v1/raw-posts` and `/v1/job-posts`.
+`/v1/sources`, raw/job post listings under `/v1/raw-posts` and `/v1/job-posts`, and generated post
+listings under `/v1/generated-posts`.
 
 ## Workspace scripts
 
@@ -108,6 +111,19 @@ so local development needs no API key. `GEMINI_MODEL` is optional and defaults t
 [docs/04-normalization-and-scoring.md](docs/04-normalization-and-scoring.md) for the pipeline,
 scoring components, and `shouldPost` logic.
 
+## Post generation
+
+| Method | Path                               | Description                                                        |
+| ------ | ---------------------------------- | ------------------------------------------------------------------ |
+| GET    | `/v1/generated-posts`              | List drafts (`jobPostId`, `platform`, `status`, `limit`, `offset`) |
+| POST   | `/v1/job-posts/:id/generate-posts` | Generate drafts for one scored job post                            |
+
+Drafts are produced by deterministic templates (no OpenAI key required) for Telegram, X, Instagram,
+and LinkedIn, and stored with status `draft`. **Nothing is published yet**: there are no Telegram, X,
+Instagram, or LinkedIn API calls, and no approval flow in this phase. See
+[docs/05-post-generation.md](docs/05-post-generation.md) for templates, platform rules, and X
+character limits.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
@@ -115,3 +131,4 @@ scoring components, and `shouldPost` logic.
 - [Source registry](docs/02-source-registry.md)
 - [Fetching pipeline](docs/03-fetching-pipeline.md)
 - [Normalization and scoring](docs/04-normalization-and-scoring.md)
+- [Post generation](docs/05-post-generation.md)
