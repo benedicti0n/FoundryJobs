@@ -10,6 +10,7 @@ type GeneratedPostRow = {
   platform: string;
   status: string;
   textContent: string;
+  imageUrl: string | null;
   createdAt: string;
 };
 
@@ -110,6 +111,7 @@ export default async function GeneratedPostsPage() {
               <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Platform</th>
+                  <th className="px-4 py-3">Image</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Preview</th>
                   <th className="px-4 py-3">Job post</th>
@@ -123,6 +125,19 @@ export default async function GeneratedPostsPage() {
                       <span className={platformStyles[post.platform] ?? "text-slate-300"}>
                         {post.platform}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {post.imageUrl ? (
+                        <a href={post.imageUrl} target="_blank" rel="noreferrer">
+                          <img
+                            src={post.imageUrl}
+                            alt={`Card preview for ${post.platform} draft`}
+                            className="h-14 w-14 rounded-lg border border-slate-800 object-cover"
+                          />
+                        </a>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className={statusStyles[post.status] ?? "text-slate-300"}>
