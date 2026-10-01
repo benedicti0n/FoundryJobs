@@ -35,7 +35,8 @@ const sections: Section[] = [
   {
     title: "Generated Posts",
     description: "Platform-specific drafts for Telegram, X, Instagram, and LinkedIn.",
-    badge: "Coming soon",
+    href: "/generated-posts",
+    badge: "Open",
   },
   {
     title: "Published Posts",
@@ -70,7 +71,7 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-5xl flex-col gap-12 px-6 py-16">
       <header className="space-y-4">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">
-          Phase 4 · AI Extraction &amp; Scoring
+          Phase 5 · Post Generation
         </p>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{APP_NAME}</h1>
         <p className="max-w-2xl text-lg text-slate-300">
