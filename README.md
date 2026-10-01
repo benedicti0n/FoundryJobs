@@ -6,11 +6,11 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 8 — Instagram Card Renderer.** The monorepo, PostgreSQL schema, source
+**Current phase: Phase 9 — R2 Instagram Card Uploads.** The monorepo, PostgreSQL schema, source
 registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
-generation, the approval workflow, Telegram publishing, and deterministic 1080x1080 Instagram job
-card rendering are in place. X, Instagram, and LinkedIn publishing plus R2 uploads land in later
-phases.
+generation, the approval workflow, Telegram publishing, deterministic 1080x1080 Instagram card
+rendering, and Cloudflare R2 upload of those cards are in place. Instagram publishing and the
+remaining platforms land in later phases.
 
 ## Requirements
 
@@ -33,6 +33,8 @@ phases.
 - `packages/telegram` — Telegram Bot API client and send helper
 - `packages/publisher` — approved-draft publishing pipeline with publish_events recording
 - `packages/card-renderer` — deterministic 1080x1080 Instagram job card renderer (SVG + sharp)
+- `packages/storage` — Cloudflare R2 (S3-compatible) upload client
+- `packages/card-uploader` — Instagram card upload pipeline from local files to R2
 - `docs/` — project documentation
 
 ## Getting started
@@ -56,6 +58,7 @@ pnpm --filter @foundryjobs/worker normalize:once       # normalize the next 25 n
 pnpm --filter @foundryjobs/worker generate-posts:once  # generate drafts for ready job posts
 pnpm --filter @foundryjobs/worker publish-telegram:once  # publish approved Telegram drafts
 pnpm --filter @foundryjobs/worker render-instagram-cards:once  # render Instagram job cards
+pnpm --filter @foundryjobs/worker upload-instagram-cards:once  # upload cards to Cloudflare R2
 ```
 
 The API serves `GET /health`, `GET /v1/status`, `GET /v1/db/status`, the source registry under
@@ -169,6 +172,19 @@ served at `/generated/instagram-cards/...`; they are local files for now and are
 R2. `regenerate: true` in the request body overwrites an existing card. See
 [docs/08-instagram-card-renderer.md](docs/08-instagram-card-renderer.md) for the design and flow.
 
+## R2 uploads
+
+| Method | Path                                            | Description                    |
+| ------ | ----------------------------------------------- | ------------------------------ |
+| POST   | `/v1/generated-posts/:id/upload/instagram-card` | Upload one rendered card to R2 |
+
+Uploads require `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and
+`R2_PUBLIC_BASE_URL`. Successful uploads replace the local `/generated/...` path in
+`generated_posts.image_url` with the public R2 URL at the key
+`foundryjobs/instagram-cards/instagram-card-<id>.png`. Instagram publishing is still separate and not
+implemented. See [docs/09-r2-instagram-card-upload.md](docs/09-r2-instagram-card-upload.md) for the
+flow and API behaviors.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
@@ -180,3 +196,4 @@ R2. `regenerate: true` in the request body overwrites an existing card. See
 - [Approval queue](docs/06-approval-queue.md)
 - [Telegram publishing](docs/07-telegram-publishing.md)
 - [Instagram card renderer](docs/08-instagram-card-renderer.md)
+- [R2 Instagram card uploads](docs/09-r2-instagram-card-upload.md)
