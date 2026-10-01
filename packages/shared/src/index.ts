@@ -7,6 +7,7 @@ export * from "./fetching";
 export * from "./generated-posts";
 export * from "./normalization";
 export * from "./publishing";
+export * from "./scheduler";
 export * from "./sources";
 export * from "./storage";
 export * from "./types";
