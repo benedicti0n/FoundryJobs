@@ -10,12 +10,14 @@
     "start": "node dist/index.js",
     "fetch:once": "tsx src/index.ts fetch:once",
     "normalize:once": "tsx src/index.ts normalize:once",
+    "generate-posts:once": "tsx src/index.ts generate-posts:once",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@foundryjobs/db": "workspace:*",
     "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/normalizer": "workspace:*",
+    "@foundryjobs/post-generator": "workspace:*",
     "@foundryjobs/shared": "workspace:*"
   },
   "devDependencies": {

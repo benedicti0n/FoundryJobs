@@ -103,6 +103,9 @@ importers:
       '@foundryjobs/normalizer':
         specifier: workspace:*
         version: link:../../packages/normalizer
+      '@foundryjobs/post-generator':
+        specifier: workspace:*
+        version: link:../../packages/post-generator
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
