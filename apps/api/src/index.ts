@@ -1,6 +1,7 @@
 import Fastify, { type FastifyError } from "fastify";
 import { APP_NAME, getPort } from "@foundryjobs/shared";
 import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
+import { registerApprovalRoutes } from "./routes/approvals";
 import { registerGeneratedPostRoutes } from "./routes/generated-posts";
 import { registerJobPostRoutes } from "./routes/job-posts";
 import { registerRawPostRoutes } from "./routes/raw-posts";
@@ -77,4 +78,5 @@ await registerSourceRoutes(app);
 await registerRawPostRoutes(app);
 await registerJobPostRoutes(app);
 await registerGeneratedPostRoutes(app);
+await registerApprovalRoutes(app);
 await start();
