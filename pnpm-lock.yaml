@@ -176,6 +176,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/card-uploader:
+    dependencies:
+      '@foundryjobs/db':
+        specifier: workspace:*
+        version: link:../db
+      '@foundryjobs/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@foundryjobs/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.3
+        version: 26.6.3
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/db:
     dependencies:
       '@foundryjobs/shared':
