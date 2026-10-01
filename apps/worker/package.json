@@ -12,15 +12,18 @@
     "normalize:once": "tsx src/index.ts normalize:once",
     "generate-posts:once": "tsx src/index.ts generate-posts:once",
     "publish-telegram:once": "tsx src/index.ts publish-telegram:once",
+    "render-instagram-cards:once": "tsx src/index.ts render-instagram-cards:once",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@foundryjobs/card-renderer": "workspace:*",
     "@foundryjobs/db": "workspace:*",
     "@foundryjobs/fetchers": "workspace:*",
     "@foundryjobs/normalizer": "workspace:*",
     "@foundryjobs/post-generator": "workspace:*",
     "@foundryjobs/publisher": "workspace:*",
-    "@foundryjobs/shared": "workspace:*"
+    "@foundryjobs/shared": "workspace:*",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

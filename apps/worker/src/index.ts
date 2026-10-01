@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { renderInstagramCardsForPendingPosts } from "@foundryjobs/card-renderer";
 import { closeDatabase } from "@foundryjobs/db";
 import { fetchDueSources } from "@foundryjobs/fetchers";
 import { normalizeNewRawPosts } from "@foundryjobs/normalizer";
@@ -172,6 +173,40 @@ async function runPublishTelegramOnce(): Promise<void> {
   }
 }
 
+async function runRenderInstagramCardsOnce(): Promise<void> {
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run render-instagram-cards:once. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const limit = parseWorkerLimit(process.env.RENDER_INSTAGRAM_CARDS_LIMIT, 10);
+
+  try {
+    const summary = await renderInstagramCardsForPendingPosts(limit);
+    console.log(`${APP_NAME} render-instagram-cards run complete (limit ${limit})`);
+    console.log(
+      `Processed ${summary.processedCount} Instagram posts (rendered ${summary.renderedCount}, skipped ${summary.skippedCount}, errors ${summary.errorCount})`,
+    );
+
+    for (const result of summary.results) {
+      const detail = result.imageUrl
+        ? ` ${result.imageUrl}`
+        : result.errorMessage
+          ? ` — ${result.errorMessage}`
+          : "";
+      console.log(`  [${result.status}] ${result.generatedPostId}${detail}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -202,6 +237,8 @@ if (command === "fetch:once") {
   await runGeneratePostsOnce();
 } else if (command === "publish-telegram:once") {
   await runPublishTelegramOnce();
+} else if (command === "render-instagram-cards:once") {
+  await runRenderInstagramCardsOnce();
 } else {
   startWorkerLoop();
 }
