@@ -53,7 +53,7 @@ function requireDatabase(): Database {
   return getDatabase();
 }
 
-function toGeneratedPostDto(row: GeneratedPostRow): GeneratedPostDto {
+export function toGeneratedPostDto(row: GeneratedPostRow): GeneratedPostDto {
   return {
     id: row.id,
     jobPostId: row.jobPostId,
