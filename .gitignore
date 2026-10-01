@@ -6,6 +6,7 @@ coverage/
 *.tsbuildinfo
 .turbo/
 next-env.d.ts
+apps/web/public/generated/
 
 .env
 .env.local
