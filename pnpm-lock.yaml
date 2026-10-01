@@ -29,9 +29,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1143.0
+        version: 3.1143.0
       '@foundryjobs/card-renderer':
         specifier: workspace:*
         version: link:../../packages/card-renderer
+      '@foundryjobs/card-uploader':
+        specifier: workspace:*
+        version: link:../../packages/card-uploader
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -50,6 +56,9 @@ importers:
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@foundryjobs/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       fastify:
         specifier: ^5.12.5
         version: 5.12.5

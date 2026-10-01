@@ -1,12 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { renderInstagramCard } from "@foundryjobs/card-renderer";
+import { uploadInstagramCard } from "@foundryjobs/card-uploader";
 import {
   getJobPostWithLatestScore,
   getRenderableInstagramPost,
+  getUploadableInstagramCard,
   listGeneratedPosts,
   type GeneratedPostListQuery,
 } from "@foundryjobs/db";
 import { generatePostsForJob } from "@foundryjobs/post-generator";
+import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
 import { isUuid, type GeneratedPostPlatform, type GeneratedPostStatus } from "@foundryjobs/shared";
 
 const GENERATED_POST_PLATFORMS: readonly GeneratedPostPlatform[] = [
@@ -161,6 +164,28 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
       }
 
       const result = await renderInstagramCard(id, { regenerate });
+      return { data: result };
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    "/v1/generated-posts/:id/upload/instagram-card",
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return reply.status(400).send({ error: { message: "id must be a valid UUID" } });
+      }
+
+      const card = await getUploadableInstagramCard(id);
+      if (!card) {
+        return reply.status(404).send({ error: { message: "Generated post not found" } });
+      }
+
+      if (card.platform === "instagram" && !isR2Configured()) {
+        return reply.status(500).send({ error: { message: R2_CONFIG_ERROR } });
+      }
+
+      const result = await uploadInstagramCard(id);
       return { data: result };
     },
   );
