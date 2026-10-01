@@ -14,10 +14,13 @@
     "publish-telegram:once": "tsx src/index.ts publish-telegram:once",
     "render-instagram-cards:once": "tsx src/index.ts render-instagram-cards:once",
     "upload-instagram-cards:once": "tsx src/index.ts upload-instagram-cards:once",
+    "publish-buffer:once": "tsx src/index.ts publish-buffer:once",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1143.0",
+    "@foundryjobs/buffer": "workspace:*",
+    "@foundryjobs/buffer-publisher": "workspace:*",
     "@foundryjobs/card-renderer": "workspace:*",
     "@foundryjobs/card-uploader": "workspace:*",
     "@foundryjobs/db": "workspace:*",

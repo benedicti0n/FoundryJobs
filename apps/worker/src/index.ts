@@ -1,5 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { getMissingBufferEnvVars } from "@foundryjobs/buffer";
+import { publishApprovedBufferPosts } from "@foundryjobs/buffer-publisher";
 import { renderInstagramCardsForPendingPosts } from "@foundryjobs/card-renderer";
 import { uploadInstagramCardsForPendingPosts } from "@foundryjobs/card-uploader";
 import { closeDatabase } from "@foundryjobs/db";
@@ -249,6 +251,49 @@ async function runUploadInstagramCardsOnce(): Promise<void> {
   }
 }
 
+async function runPublishBufferOnce(): Promise<void> {
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run publish-buffer:once. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const missing = getMissingBufferEnvVars();
+  if (missing.length > 0) {
+    console.error(
+      `BUFFER_ACCESS_TOKEN and the matching BUFFER_PROFILE_ID_* value are required to run publish-buffer:once. Missing: ${missing.join(", ")}. No posts were published.`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const limit = parseWorkerLimit(process.env.PUBLISH_BUFFER_LIMIT, 10);
+
+  try {
+    const summary = await publishApprovedBufferPosts(limit);
+    console.log(`${APP_NAME} publish-buffer run complete (limit ${limit})`);
+    console.log(
+      `Processed ${summary.processedCount} approved posts (published ${summary.publishedCount}, skipped ${summary.skippedCount}, failed ${summary.failedCount})`,
+    );
+
+    for (const result of summary.results) {
+      const external = result.externalPostId ? ` external=${result.externalPostId}` : "";
+      const link = result.publishedUrl ? ` ${result.publishedUrl}` : "";
+      const error = result.errorMessage ? ` — ${result.errorMessage}` : "";
+      console.log(
+        `  [${result.status}] ${result.platform ?? "unknown"} ${result.generatedPostId}${external}${link}${error}`,
+      );
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -283,6 +328,8 @@ if (command === "fetch:once") {
   await runRenderInstagramCardsOnce();
 } else if (command === "upload-instagram-cards:once") {
   await runUploadInstagramCardsOnce();
+} else if (command === "publish-buffer:once") {
+  await runPublishBufferOnce();
 } else {
   startWorkerLoop();
 }
