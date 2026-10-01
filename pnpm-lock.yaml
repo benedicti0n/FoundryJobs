@@ -106,9 +106,15 @@ importers:
 
   apps/worker:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1143.0
+        version: 3.1143.0
       '@foundryjobs/card-renderer':
         specifier: workspace:*
         version: link:../../packages/card-renderer
+      '@foundryjobs/card-uploader':
+        specifier: workspace:*
+        version: link:../../packages/card-uploader
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -127,6 +133,9 @@ importers:
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@foundryjobs/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       sharp:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@26.6.3)

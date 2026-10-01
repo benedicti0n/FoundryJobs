@@ -1,12 +1,14 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { renderInstagramCardsForPendingPosts } from "@foundryjobs/card-renderer";
+import { uploadInstagramCardsForPendingPosts } from "@foundryjobs/card-uploader";
 import { closeDatabase } from "@foundryjobs/db";
 import { fetchDueSources } from "@foundryjobs/fetchers";
 import { normalizeNewRawPosts } from "@foundryjobs/normalizer";
 import { generatePostsForReadyJobs } from "@foundryjobs/post-generator";
 import { publishApprovedTelegramPosts } from "@foundryjobs/publisher";
 import { APP_NAME, isEnvSet } from "@foundryjobs/shared";
+import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
 
 const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
 
@@ -207,6 +209,46 @@ async function runRenderInstagramCardsOnce(): Promise<void> {
   }
 }
 
+async function runUploadInstagramCardsOnce(): Promise<void> {
+  if (!isEnvSet("DATABASE_URL")) {
+    console.error(
+      "DATABASE_URL is required to run upload-instagram-cards:once. Set it in the environment or the root .env file.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!isR2Configured()) {
+    console.error(`${R2_CONFIG_ERROR}. No cards were uploaded.`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const limit = parseWorkerLimit(process.env.UPLOAD_INSTAGRAM_CARDS_LIMIT, 10);
+
+  try {
+    const summary = await uploadInstagramCardsForPendingPosts(limit);
+    console.log(`${APP_NAME} upload-instagram-cards run complete (limit ${limit})`);
+    console.log(
+      `Processed ${summary.processedCount} Instagram cards (uploaded ${summary.uploadedCount}, skipped ${summary.skippedCount}, errors ${summary.errorCount})`,
+    );
+
+    for (const result of summary.results) {
+      const detail = result.publicImageUrl
+        ? ` -> ${result.publicImageUrl}`
+        : result.errorMessage
+          ? ` — ${result.errorMessage}`
+          : "";
+      console.log(`  [${result.status}] ${result.generatedPostId}${detail}`);
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -239,6 +281,8 @@ if (command === "fetch:once") {
   await runPublishTelegramOnce();
 } else if (command === "render-instagram-cards:once") {
   await runRenderInstagramCardsOnce();
+} else if (command === "upload-instagram-cards:once") {
+  await runUploadInstagramCardsOnce();
 } else {
   startWorkerLoop();
 }
