@@ -1,5 +1,5 @@
 import Fastify, { type FastifyError } from "fastify";
-import { APP_NAME, getPort } from "@foundryjobs/shared";
+import { APP_NAME, getPort, isEnvSet } from "@foundryjobs/shared";
 import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
 import { registerApprovalRoutes } from "./routes/approvals";
 import { registerGeneratedPostRoutes } from "./routes/generated-posts";
@@ -23,6 +23,16 @@ app.get("/v1/status", async () => ({
 }));
 
 app.get("/v1/db/status", async () => getDatabaseStatus());
+
+app.get("/ready", async () => {
+  const databaseConfigured = isEnvSet("DATABASE_URL");
+  const adminTokenConfigured = isEnvSet("API_ADMIN_TOKEN");
+  return {
+    ok: databaseConfigured && adminTokenConfigured,
+    databaseConfigured,
+    adminTokenConfigured,
+  };
+});
 
 app.setNotFoundHandler((request, reply) => {
   reply
