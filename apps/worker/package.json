@@ -18,6 +18,9 @@
     "scheduler": "tsx src/index.ts scheduler",
     "start:scheduler": "node dist/index.js scheduler",
     "check-env": "tsx src/index.ts check-env",
+    "test:telegram-publish": "tsx src/index.ts test-telegram-publish",
+    "test:r2-upload": "tsx src/index.ts test-r2-upload",
+    "test:buffer-publish": "tsx src/index.ts test-buffer-publish",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
