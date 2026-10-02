@@ -6,11 +6,12 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 14 — Simple Admin Auth.** The monorepo, PostgreSQL schema, source registry,
-ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, the
-approval workflow, Telegram and Buffer publishing, Instagram card rendering, Cloudflare R2 uploads,
-the recurring scheduler for the non-publishing pipeline, manual publish buttons, and a simple shared
-admin login plus API token protection are in place. Publishing stays manual.
+**Current phase: Phase 15 — Production Deployment Hardening.** The monorepo, PostgreSQL schema,
+source registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
+generation, the approval workflow, Telegram and Buffer publishing, Instagram card rendering,
+Cloudflare R2 uploads, the recurring scheduler for the non-publishing pipeline, manual publish
+buttons, simple admin auth, and production start scripts plus an environment check command are in
+place. Publishing stays manual.
 
 ## Requirements
 
@@ -222,6 +223,23 @@ attempt is recorded in the shared `publish_events` audit trail. Telegram stays o
 pipeline and is never routed through Buffer. See
 [docs/10-buffer-publishing.md](docs/10-buffer-publishing.md) for the flow and API behaviors.
 
+## Production
+
+```bash
+pnpm build            # build web, api, and worker
+pnpm check:env        # print present/missing status for every env var (never values)
+pnpm db:migrate       # apply migrations
+pnpm start:api        # API service
+pnpm start:web        # dashboard
+pnpm start:worker     # default worker placeholder mode
+pnpm start:scheduler  # worker scheduler mode (one instance per environment)
+```
+
+Readiness: `GET /ready` returns `{ ok, databaseConfigured, adminTokenConfigured }` and never
+requires an admin token. The scheduler never publishes, and running more than one scheduler instance
+is not supported. See [docs/15-production-deployment.md](docs/15-production-deployment.md) for the
+service layout, env var reference, checklist, and security notes.
+
 ## Admin auth
 
 The dashboard is protected by a simple shared admin login at `/login` using `ADMIN_USERNAME`,
@@ -249,3 +267,4 @@ list and limitations.
 - [Scheduler orchestration](docs/12-scheduler.md)
 - [Dashboard publish buttons](docs/13-dashboard-publish-buttons.md)
 - [Simple admin auth](docs/14-simple-admin-auth.md)
+- [Production deployment](docs/15-production-deployment.md)
