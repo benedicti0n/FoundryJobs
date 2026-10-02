@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Notice } from "@/components/notice";
 import { formatDateTime } from "@/lib/format";
+import { publishBufferAction, publishTelegramAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,23 @@ type GeneratedPostRow = {
   status: string;
   textContent: string;
   imageUrl: string | null;
+  companyName: string | null;
+  roleTitle: string;
+  location: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 type GeneratedPostsState =
   | { status: "unconfigured" }
   | { status: "error"; message: string }
   | { status: "ready"; posts: GeneratedPostRow[] };
+
+type PublishControl =
+  | { kind: "telegram" }
+  | { kind: "buffer"; label: string }
+  | { kind: "warning"; message: string }
+  | null;
 
 const platformStyles: Record<string, string> = {
   telegram: "text-sky-300",
@@ -56,10 +67,40 @@ async function loadGeneratedPosts(): Promise<GeneratedPostsState> {
 
 function previewText(text: string): string {
   const collapsed = text.replace(/\s+/g, " ").trim();
-  return collapsed.length > 140 ? `${collapsed.slice(0, 137)}...` : collapsed;
+  return collapsed.length > 200 ? `${collapsed.slice(0, 197)}...` : collapsed;
 }
 
-export default async function GeneratedPostsPage() {
+function publishControl(post: GeneratedPostRow): PublishControl {
+  if (post.status !== "approved") {
+    return null;
+  }
+
+  switch (post.platform) {
+    case "telegram":
+      return { kind: "telegram" };
+    case "x":
+      return { kind: "buffer", label: "Publish to X via Buffer" };
+    case "linkedin":
+      return { kind: "buffer", label: "Publish to LinkedIn via Buffer" };
+    case "instagram":
+      if (post.imageUrl && /^https?:\/\//i.test(post.imageUrl)) {
+        return { kind: "buffer", label: "Publish to Instagram via Buffer" };
+      }
+      if (post.imageUrl?.startsWith("/generated")) {
+        return { kind: "warning", message: "Upload to R2 before publishing." };
+      }
+      return { kind: "warning", message: "Instagram publishing requires a public image URL." };
+    default:
+      return null;
+  }
+}
+
+export default async function GeneratedPostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string; error?: string }>;
+}) {
+  const params = await searchParams;
   const state = await loadGeneratedPosts();
 
   return (
@@ -76,10 +117,13 @@ export default async function GeneratedPostsPage() {
           Platform-ready drafts for Telegram, X, Instagram, and LinkedIn.
         </p>
         <p className="text-sm text-slate-500">
-          Every draft comes from a scored job post that was flagged for posting. Nothing is
-          published yet — approval and publishing land in later phases.
+          Approved drafts can be published manually from here: Telegram goes through the direct bot,
+          X, Instagram, and LinkedIn go through Buffer. Nothing is published automatically.
         </p>
       </header>
+
+      {params.message ? <Notice tone="success">{params.message}</Notice> : null}
+      {params.error ? <Notice tone="warning">{params.error}</Notice> : null}
 
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -106,92 +150,110 @@ export default async function GeneratedPostsPage() {
         )}
 
         {state.status === "ready" && state.posts.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
-                <tr>
-                  <th className="px-4 py-3">Platform</th>
-                  <th className="px-4 py-3">Image</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Preview</th>
-                  <th className="px-4 py-3">Job post</th>
-                  <th className="px-4 py-3">Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {state.posts.map((post) => (
-                  <tr key={post.id} className="bg-slate-950/40">
-                    <td className="px-4 py-3">
-                      <span className={platformStyles[post.platform] ?? "text-slate-300"}>
-                        {post.platform}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {post.imageUrl ? (
-                        <div className="space-y-1">
-                          <a href={post.imageUrl} target="_blank" rel="noreferrer">
-                            <img
-                              src={post.imageUrl}
-                              alt={`Card preview for ${post.platform} draft`}
-                              className="h-14 w-14 rounded-lg border border-slate-800 object-cover"
-                            />
-                          </a>
-                          <a
-                            href={post.imageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title={post.imageUrl}
-                            className={`block max-w-[160px] truncate text-xs ${
-                              post.imageUrl.startsWith("http")
-                                ? "text-emerald-300 hover:text-emerald-200"
-                                : "text-slate-500 hover:text-slate-400"
-                            }`}
-                          >
-                            {post.imageUrl}
-                          </a>
-                        </div>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={statusStyles[post.status] ?? "text-slate-300"}>
-                        {post.status}
-                      </span>
-                      {post.status === "draft" ? (
-                        <p className="mt-1 text-xs">
-                          <Link
-                            href="/approval-queue"
-                            className="text-emerald-300 hover:text-emerald-200"
-                          >
-                            Review in Approval Queue
-                          </Link>
-                        </p>
-                      ) : null}
-                      {post.status === "approved" &&
-                      ["x", "instagram", "linkedin"].includes(post.platform) ? (
-                        <p className="mt-1 text-xs text-slate-500">Buffer-publishable</p>
-                      ) : null}
-                      {post.platform === "instagram" && post.imageUrl?.startsWith("/generated") ? (
-                        <p className="mt-1 text-xs text-amber-300">
-                          Upload to R2 before publishing.
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="max-w-md px-4 py-3 text-slate-300">
-                      {previewText(post.textContent)}
-                    </td>
-                    <td
-                      className="px-4 py-3 font-mono text-xs text-slate-500"
-                      title={post.jobPostId}
+          <div className="space-y-3">
+            {state.posts.map((post) => {
+              const control = publishControl(post);
+              return (
+                <article
+                  key={post.id}
+                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <span
+                      className={`font-medium uppercase tracking-wider ${platformStyles[post.platform] ?? "text-slate-300"}`}
                     >
-                      {post.jobPostId.slice(0, 8)}…
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">{formatDateTime(post.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      {post.platform}
+                    </span>
+                    <span className={statusStyles[post.status] ?? "text-slate-300"}>
+                      {post.status}
+                    </span>
+                    <span className="text-slate-600">created {formatDateTime(post.createdAt)}</span>
+                    <span className="text-slate-600">updated {formatDateTime(post.updatedAt)}</span>
+                  </div>
+
+                  <h3 className="mt-3 text-base font-semibold text-slate-100">
+                    {post.companyName ?? "Company not specified"} — {post.roleTitle}
+                  </h3>
+                  {post.location ? (
+                    <p className="mt-1 text-xs text-slate-500">{post.location}</p>
+                  ) : null}
+                  <p className="mt-3 text-sm text-slate-400">{previewText(post.textContent)}</p>
+
+                  {post.imageUrl ? (
+                    <div className="mt-3 flex items-center gap-3">
+                      <a href={post.imageUrl} target="_blank" rel="noreferrer">
+                        <img
+                          src={post.imageUrl}
+                          alt={`Card preview for ${post.platform} draft`}
+                          className="h-14 w-14 rounded-lg border border-slate-800 object-cover"
+                        />
+                      </a>
+                      <a
+                        href={post.imageUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={post.imageUrl}
+                        className={`block max-w-[240px] truncate text-xs ${
+                          post.imageUrl.startsWith("http")
+                            ? "text-emerald-300 hover:text-emerald-200"
+                            : "text-slate-500 hover:text-slate-400"
+                        }`}
+                      >
+                        {post.imageUrl}
+                      </a>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {post.status === "draft" ? (
+                      <Link
+                        href="/approval-queue"
+                        className="text-xs text-emerald-300 hover:text-emerald-200"
+                      >
+                        Review in Approval Queue
+                      </Link>
+                    ) : null}
+
+                    {post.status === "published" ? (
+                      <Link
+                        href="/publish-events"
+                        className="text-xs text-emerald-300 hover:text-emerald-200"
+                      >
+                        Published — view publish events
+                      </Link>
+                    ) : null}
+
+                    {control?.kind === "telegram" ? (
+                      <form action={publishTelegramAction}>
+                        <input type="hidden" name="generatedPostId" value={post.id} />
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-sky-950 transition-colors hover:bg-sky-400"
+                        >
+                          Publish to Telegram
+                        </button>
+                      </form>
+                    ) : null}
+
+                    {control?.kind === "buffer" ? (
+                      <form action={publishBufferAction}>
+                        <input type="hidden" name="generatedPostId" value={post.id} />
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-950 transition-colors hover:bg-emerald-400"
+                        >
+                          {control.label}
+                        </button>
+                      </form>
+                    ) : null}
+
+                    {control?.kind === "warning" ? (
+                      <p className="text-xs text-amber-300">{control.message}</p>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
