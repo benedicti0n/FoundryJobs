@@ -5,6 +5,10 @@ export class ApiError extends Error {
   }
 }
 
+export const API_ADMIN_SETUP_ERROR = "API admin token is not configured. Set API_ADMIN_TOKEN.";
+
+const MUTATION_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
+
 export function getApiBaseUrl(): string | null {
   const baseUrl = process.env.API_BASE_URL;
   if (!baseUrl || baseUrl.trim().length === 0) {
@@ -25,9 +29,19 @@ async function request(path: string, init: RequestInit = {}): Promise<unknown> {
     throw new ApiError("API_BASE_URL is not configured");
   }
 
+  const method = (init.method ?? "GET").toUpperCase();
+  const headers = new Headers(init.headers);
+  if (MUTATION_METHODS.has(method)) {
+    const adminToken = process.env.API_ADMIN_TOKEN;
+    if (!adminToken || adminToken.trim().length === 0) {
+      throw new ApiError(API_ADMIN_SETUP_ERROR);
+    }
+    headers.set("x-admin-token", adminToken);
+  }
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}${path}`, { cache: "no-store", ...init });
+    response = await fetch(`${baseUrl}${path}`, { cache: "no-store", ...init, headers });
   } catch {
     throw new ApiError("Could not reach the FoundryJobs API");
   }
