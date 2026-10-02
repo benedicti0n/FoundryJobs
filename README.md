@@ -6,11 +6,12 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 12 — Scheduler Orchestration.** The monorepo, PostgreSQL schema, source
+**Current phase: Phase 13 — Dashboard Publish Buttons.** The monorepo, PostgreSQL schema, source
 registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
 generation, the approval workflow, Telegram and Buffer publishing, Instagram card rendering,
-Cloudflare R2 uploads, and the recurring scheduler for the non-publishing pipeline are in place.
-Publishing stays manual, and authentication lands in a later phase.
+Cloudflare R2 uploads, the recurring scheduler for the non-publishing pipeline, and manual publish
+buttons on the dashboard are in place. Publishing stays manual, and authentication lands in a later
+phase.
 
 ## Requirements
 
@@ -134,10 +135,12 @@ scoring components, and `shouldPost` logic.
 | POST   | `/v1/job-posts/:id/generate-posts` | Generate drafts for one scored job post                            |
 
 Drafts are produced by deterministic templates (no OpenAI key required) for Telegram, X, Instagram,
-and LinkedIn, and stored with status `draft`. **Nothing is published yet**: there are no Telegram, X,
-Instagram, or LinkedIn API calls. See
+and LinkedIn, and stored with status `draft`. **Publishing is always manual**: approved drafts show
+publish buttons on the `/generated-posts` dashboard page (Telegram direct, X/Instagram/LinkedIn via
+Buffer) and real publishing requires the matching credentials. Nothing is scheduled to publish. See
 [docs/05-post-generation.md](docs/05-post-generation.md) for templates, platform rules, and X
-character limits.
+character limits, and [docs/13-dashboard-publish-buttons.md](docs/13-dashboard-publish-buttons.md)
+for the manual publish flow.
 
 ## Approval queue
 
@@ -235,3 +238,4 @@ pipeline and is never routed through Buffer. See
 - [Buffer publishing](docs/10-buffer-publishing.md)
 - [Dashboard approval actions](docs/11-dashboard-approval-actions.md)
 - [Scheduler orchestration](docs/12-scheduler.md)
+- [Dashboard publish buttons](docs/13-dashboard-publish-buttons.md)
