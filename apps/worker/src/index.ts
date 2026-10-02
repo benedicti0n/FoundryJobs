@@ -11,6 +11,7 @@ import { generatePostsForReadyJobs } from "@foundryjobs/post-generator";
 import { publishApprovedTelegramPosts } from "@foundryjobs/publisher";
 import { APP_NAME, checkEnvironment, formatEnvCheckReport, isEnvSet } from "@foundryjobs/shared";
 import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
+import { runBufferLiveTest, runR2LiveTest, runTelegramLiveTest } from "./live-tests";
 import { WorkerScheduler, isSchedulerEnabled, readSchedulerConfig } from "./scheduler";
 
 const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
@@ -384,6 +385,12 @@ if (command === "fetch:once") {
   await runScheduler();
 } else if (command === "check-env") {
   runCheckEnv();
+} else if (command === "test-telegram-publish") {
+  await runTelegramLiveTest();
+} else if (command === "test-r2-upload") {
+  await runR2LiveTest();
+} else if (command === "test-buffer-publish") {
+  await runBufferLiveTest();
 } else {
   startWorkerLoop();
 }
