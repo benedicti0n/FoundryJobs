@@ -9,7 +9,7 @@ import { fetchDueSources } from "@foundryjobs/fetchers";
 import { normalizeNewRawPosts } from "@foundryjobs/normalizer";
 import { generatePostsForReadyJobs } from "@foundryjobs/post-generator";
 import { publishApprovedTelegramPosts } from "@foundryjobs/publisher";
-import { APP_NAME, isEnvSet } from "@foundryjobs/shared";
+import { APP_NAME, checkEnvironment, formatEnvCheckReport, isEnvSet } from "@foundryjobs/shared";
 import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
 import { WorkerScheduler, isSchedulerEnabled, readSchedulerConfig } from "./scheduler";
 
@@ -331,6 +331,16 @@ async function runScheduler(): Promise<void> {
   scheduler.start();
 }
 
+function runCheckEnv(): void {
+  const result = checkEnvironment();
+  for (const line of formatEnvCheckReport(result)) {
+    console.log(line);
+  }
+  if (!result.ok) {
+    process.exitCode = 1;
+  }
+}
+
 function startWorkerLoop(): void {
   const heartbeat = setInterval(() => undefined, 30_000);
 
@@ -342,6 +352,9 @@ function startWorkerLoop(): void {
 
   console.log(`${APP_NAME} worker booted`);
   console.log("No scheduled jobs registered yet");
+  console.log(
+    "Available commands: fetch:once, normalize:once, generate-posts:once, render-instagram-cards:once, upload-instagram-cards:once, publish-telegram:once, publish-buffer:once, scheduler, check-env",
+  );
 
   process.once("SIGINT", () => {
     shutdown("SIGINT");
@@ -369,6 +382,8 @@ if (command === "fetch:once") {
   await runPublishBufferOnce();
 } else if (command === "scheduler") {
   await runScheduler();
+} else if (command === "check-env") {
+  runCheckEnv();
 } else {
   startWorkerLoop();
 }

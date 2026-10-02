@@ -94,6 +94,9 @@ export class WorkerScheduler {
 
   logBoot(): void {
     this.logger.log("FoundryJobs scheduler booted");
+    this.logger.log("Scheduler enabled: true");
+    this.logger.log("Publishing is not scheduled; publish commands stay manual.");
+    this.logger.log("Run exactly one scheduler instance per environment to avoid duplicate runs.");
     for (const job of this.config.jobs) {
       const limitPart = job.limit !== null ? `, limit ${job.limit}` : "";
       this.logger.log(`  - ${job.definition.name} every ${job.intervalMinutes}m${limitPart}`);
