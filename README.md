@@ -6,12 +6,11 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 13 — Dashboard Publish Buttons.** The monorepo, PostgreSQL schema, source
-registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
-generation, the approval workflow, Telegram and Buffer publishing, Instagram card rendering,
-Cloudflare R2 uploads, the recurring scheduler for the non-publishing pipeline, and manual publish
-buttons on the dashboard are in place. Publishing stays manual, and authentication lands in a later
-phase.
+**Current phase: Phase 14 — Simple Admin Auth.** The monorepo, PostgreSQL schema, source registry,
+ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft generation, the
+approval workflow, Telegram and Buffer publishing, Instagram card rendering, Cloudflare R2 uploads,
+the recurring scheduler for the non-publishing pipeline, manual publish buttons, and a simple shared
+admin login plus API token protection are in place. Publishing stays manual.
 
 ## Requirements
 
@@ -223,6 +222,16 @@ attempt is recorded in the shared `publish_events` audit trail. Telegram stays o
 pipeline and is never routed through Buffer. See
 [docs/10-buffer-publishing.md](docs/10-buffer-publishing.md) for the flow and API behaviors.
 
+## Admin auth
+
+The dashboard is protected by a simple shared admin login at `/login` using `ADMIN_USERNAME`,
+`ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET`; sessions are HMAC-signed cookies that last 7 days. All
+dashboard routes redirect to `/login?next=<path>` without a valid session. API mutation endpoints
+additionally require the `X-Admin-Token` header matching `API_ADMIN_TOKEN`; the web server actions
+attach it server-side. `GET /health`, `GET /v1/status`, `GET /v1/db/status`, and read-only data
+endpoints stay public. See [docs/14-simple-admin-auth.md](docs/14-simple-admin-auth.md) for the full
+list and limitations.
+
 ## Documentation
 
 - [Project overview](docs/00-project-overview.md)
@@ -239,3 +248,4 @@ pipeline and is never routed through Buffer. See
 - [Dashboard approval actions](docs/11-dashboard-approval-actions.md)
 - [Scheduler orchestration](docs/12-scheduler.md)
 - [Dashboard publish buttons](docs/13-dashboard-publish-buttons.md)
+- [Simple admin auth](docs/14-simple-admin-auth.md)
