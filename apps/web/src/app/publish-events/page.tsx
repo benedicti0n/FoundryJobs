@@ -86,6 +86,23 @@ export default async function PublishEventsPage() {
         </p>
       </header>
 
+      <section className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/generated-posts"
+          className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition-colors hover:border-emerald-500/60"
+        >
+          <h2 className="text-sm font-semibold text-slate-100">Generated Posts</h2>
+          <p className="mt-1 text-xs text-slate-500">Approve and publish drafts from here</p>
+        </Link>
+        <Link
+          href="/approval-queue"
+          className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition-colors hover:border-emerald-500/60"
+        >
+          <h2 className="text-sm font-semibold text-slate-100">Approval Queue</h2>
+          <p className="mt-1 text-xs text-slate-500">Review drafts before publishing</p>
+        </Link>
+      </section>
+
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
           Recent attempts
@@ -102,11 +119,15 @@ export default async function PublishEventsPage() {
 
         {state.status === "ready" && state.events.length === 0 && (
           <Notice tone="muted">
-            No publish attempts yet. Run{" "}
-            <code className="text-slate-200">
-              pnpm --filter @foundryjobs/worker publish-telegram:once
-            </code>{" "}
-            after approving a Telegram draft.
+            No publish events yet. Approve a draft on the{" "}
+            <Link href="/approval-queue" className="text-emerald-300 hover:text-emerald-200">
+              Approval Queue
+            </Link>{" "}
+            page, then publish it from{" "}
+            <Link href="/generated-posts" className="text-emerald-300 hover:text-emerald-200">
+              Generated Posts
+            </Link>{" "}
+            or with the worker commands.
           </Notice>
         )}
 
