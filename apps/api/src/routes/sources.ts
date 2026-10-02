@@ -16,6 +16,7 @@ import {
   updateSource,
 } from "@foundryjobs/db";
 import { fetchSource } from "@foundryjobs/fetchers";
+import { requireAdminToken } from "../auth/admin-token";
 
 function errorBody(message: string): { error: { message: string } } {
   return { error: { message } };
@@ -53,22 +54,26 @@ export async function registerSourceRoutes(app: FastifyInstance): Promise<void> 
     return { data: source };
   });
 
-  app.post<{ Params: { id: string } }>("/v1/sources/:id/fetch", async (request, reply) => {
-    const { id } = request.params;
-    if (!isUuid(id)) {
-      return sendValidationError(reply, ["id must be a valid UUID"]);
-    }
+  app.post<{ Params: { id: string } }>(
+    "/v1/sources/:id/fetch",
+    { preHandler: requireAdminToken },
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return sendValidationError(reply, ["id must be a valid UUID"]);
+      }
 
-    const source = await getSourceById(id);
-    if (!source) {
-      return sendNotFound(reply);
-    }
+      const source = await getSourceById(id);
+      if (!source) {
+        return sendNotFound(reply);
+      }
 
-    const result = await fetchSource(source);
-    return { data: result };
-  });
+      const result = await fetchSource(source);
+      return { data: result };
+    },
+  );
 
-  app.post("/v1/sources", async (request, reply) => {
+  app.post("/v1/sources", { preHandler: requireAdminToken }, async (request, reply) => {
     const parsed = validateCreateSourceInput(request.body);
     if (!parsed.ok) {
       return sendValidationError(reply, parsed.errors);
@@ -85,59 +90,71 @@ export async function registerSourceRoutes(app: FastifyInstance): Promise<void> 
     }
   });
 
-  app.patch<{ Params: { id: string } }>("/v1/sources/:id", async (request, reply) => {
-    const { id } = request.params;
-    if (!isUuid(id)) {
-      return sendValidationError(reply, ["id must be a valid UUID"]);
-    }
+  app.patch<{ Params: { id: string } }>(
+    "/v1/sources/:id",
+    { preHandler: requireAdminToken },
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return sendValidationError(reply, ["id must be a valid UUID"]);
+      }
 
-    const parsed = validateUpdateSourceInput(request.body);
-    if (!parsed.ok) {
-      return sendValidationError(reply, parsed.errors);
-    }
+      const parsed = validateUpdateSourceInput(request.body);
+      if (!parsed.ok) {
+        return sendValidationError(reply, parsed.errors);
+      }
 
-    try {
-      const source = await updateSource(id, parsed.data);
+      try {
+        const source = await updateSource(id, parsed.data);
+        if (!source) {
+          return sendNotFound(reply);
+        }
+        return { data: source };
+      } catch (error) {
+        if (error instanceof SourceConflictError) {
+          return sendValidationError(reply, [error.message]);
+        }
+        throw error;
+      }
+    },
+  );
+
+  app.patch<{ Params: { id: string } }>(
+    "/v1/sources/:id/active",
+    { preHandler: requireAdminToken },
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return sendValidationError(reply, ["id must be a valid UUID"]);
+      }
+
+      const parsed = validateSetSourceActiveInput(request.body);
+      if (!parsed.ok) {
+        return sendValidationError(reply, parsed.errors);
+      }
+
+      const source = await setSourceActive(id, parsed.data.isActive);
       if (!source) {
         return sendNotFound(reply);
       }
       return { data: source };
-    } catch (error) {
-      if (error instanceof SourceConflictError) {
-        return sendValidationError(reply, [error.message]);
+    },
+  );
+
+  app.delete<{ Params: { id: string } }>(
+    "/v1/sources/:id",
+    { preHandler: requireAdminToken },
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return sendValidationError(reply, ["id must be a valid UUID"]);
       }
-      throw error;
-    }
-  });
 
-  app.patch<{ Params: { id: string } }>("/v1/sources/:id/active", async (request, reply) => {
-    const { id } = request.params;
-    if (!isUuid(id)) {
-      return sendValidationError(reply, ["id must be a valid UUID"]);
-    }
-
-    const parsed = validateSetSourceActiveInput(request.body);
-    if (!parsed.ok) {
-      return sendValidationError(reply, parsed.errors);
-    }
-
-    const source = await setSourceActive(id, parsed.data.isActive);
-    if (!source) {
-      return sendNotFound(reply);
-    }
-    return { data: source };
-  });
-
-  app.delete<{ Params: { id: string } }>("/v1/sources/:id", async (request, reply) => {
-    const { id } = request.params;
-    if (!isUuid(id)) {
-      return sendValidationError(reply, ["id must be a valid UUID"]);
-    }
-
-    const deleted = await deleteSource(id);
-    if (!deleted) {
-      return sendNotFound(reply);
-    }
-    return reply.status(204).send();
-  });
+      const deleted = await deleteSource(id);
+      if (!deleted) {
+        return sendNotFound(reply);
+      }
+      return reply.status(204).send();
+    },
+  );
 }

@@ -11,6 +11,7 @@ import {
 import { generatePostsForJob } from "@foundryjobs/post-generator";
 import { R2_CONFIG_ERROR, isR2Configured } from "@foundryjobs/storage";
 import { isUuid, type GeneratedPostPlatform, type GeneratedPostStatus } from "@foundryjobs/shared";
+import { requireAdminToken } from "../auth/admin-token";
 
 const GENERATED_POST_PLATFORMS: readonly GeneratedPostPlatform[] = [
   "telegram",
@@ -122,6 +123,7 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
 
   app.post<{ Params: { id: string } }>(
     "/v1/job-posts/:id/generate-posts",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {
@@ -140,6 +142,7 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
 
   app.post<{ Params: { id: string } }>(
     "/v1/generated-posts/:id/render/instagram-card",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {
@@ -170,6 +173,7 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
 
   app.post<{ Params: { id: string } }>(
     "/v1/generated-posts/:id/upload/instagram-card",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {

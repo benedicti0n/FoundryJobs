@@ -12,6 +12,7 @@ import {
   type GeneratedPostPlatform,
   type GeneratedPostStatus,
 } from "@foundryjobs/shared";
+import { requireAdminToken } from "../auth/admin-token";
 import { parsePlatformListQuery } from "./list-query";
 
 const GENERATED_POST_PLATFORMS: readonly string[] = ["telegram", "x", "instagram", "linkedin"];
@@ -57,31 +58,36 @@ export async function registerApprovalRoutes(app: FastifyInstance): Promise<void
     return { data: generatedPost };
   });
 
-  app.patch<{ Params: { id: string } }>("/v1/generated-posts/:id/text", async (request, reply) => {
-    const { id } = request.params;
-    if (!isUuid(id)) {
-      return reply.status(400).send({ error: { message: "id must be a valid UUID" } });
-    }
+  app.patch<{ Params: { id: string } }>(
+    "/v1/generated-posts/:id/text",
+    { preHandler: requireAdminToken },
+    async (request, reply) => {
+      const { id } = request.params;
+      if (!isUuid(id)) {
+        return reply.status(400).send({ error: { message: "id must be a valid UUID" } });
+      }
 
-    const parsed = validateUpdateGeneratedPostTextInput(request.body);
-    if (!parsed.ok) {
-      return reply.status(400).send({ error: { message: parsed.errors.join("; ") } });
-    }
+      const parsed = validateUpdateGeneratedPostTextInput(request.body);
+      if (!parsed.ok) {
+        return reply.status(400).send({ error: { message: parsed.errors.join("; ") } });
+      }
 
-    const generatedPost = await getGeneratedPostById(id);
-    if (!generatedPost) {
-      return reply.status(404).send({ error: { message: "Generated post not found" } });
-    }
+      const generatedPost = await getGeneratedPostById(id);
+      if (!generatedPost) {
+        return reply.status(404).send({ error: { message: "Generated post not found" } });
+      }
 
-    const updated = await updateGeneratedPostText(id, parsed.data.textContent);
-    if (!updated) {
-      return reply.status(404).send({ error: { message: "Generated post not found" } });
-    }
-    return { data: updated };
-  });
+      const updated = await updateGeneratedPostText(id, parsed.data.textContent);
+      if (!updated) {
+        return reply.status(404).send({ error: { message: "Generated post not found" } });
+      }
+      return { data: updated };
+    },
+  );
 
   app.post<{ Params: { id: string } }>(
     "/v1/generated-posts/:id/approval",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {

@@ -9,6 +9,7 @@ import {
 } from "@foundryjobs/db";
 import { publishTelegramGeneratedPost } from "@foundryjobs/publisher";
 import { isEnvSet, isUuid, type PublishPlatform, type PublishStatus } from "@foundryjobs/shared";
+import { requireAdminToken } from "../auth/admin-token";
 
 const PUBLISH_PLATFORMS: readonly PublishPlatform[] = ["telegram", "x", "instagram", "linkedin"];
 
@@ -117,6 +118,7 @@ export async function registerPublishEventRoutes(app: FastifyInstance): Promise<
 
   app.post<{ Params: { id: string } }>(
     "/v1/generated-posts/:id/publish/telegram",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {
@@ -143,6 +145,7 @@ export async function registerPublishEventRoutes(app: FastifyInstance): Promise<
 
   app.post<{ Params: { id: string } }>(
     "/v1/generated-posts/:id/publish/buffer",
+    { preHandler: requireAdminToken },
     async (request, reply) => {
       const { id } = request.params;
       if (!isUuid(id)) {
