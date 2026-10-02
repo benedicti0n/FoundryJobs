@@ -3,6 +3,7 @@ export * from "./buffer";
 export * from "./card-rendering";
 export * from "./constants";
 export * from "./env";
+export * from "./env-check";
 export * from "./fetching";
 export * from "./generated-posts";
 export * from "./normalization";
