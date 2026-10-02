@@ -6,12 +6,12 @@ FoundryJobs fetches hiring posts from trusted internet sources, filters and scor
 generates platform-specific posts for Telegram, X, Instagram, and LinkedIn, and keeps them in an
 approval queue before anything is published.
 
-**Current phase: Phase 15 — Production Deployment Hardening.** The monorepo, PostgreSQL schema,
-source registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
+**Current phase: Phase 16 — Real Credential Tests.** The monorepo, PostgreSQL schema, source
+registry, ATS fetchers (Greenhouse, Lever, Ashby), the normalization pipeline, platform draft
 generation, the approval workflow, Telegram and Buffer publishing, Instagram card rendering,
 Cloudflare R2 uploads, the recurring scheduler for the non-publishing pipeline, manual publish
-buttons, simple admin auth, and production start scripts plus an environment check command are in
-place. Publishing stays manual.
+buttons, simple admin auth, production hardening, and guarded one-shot live integration tests for
+Telegram, R2, and Buffer are in place. Publishing stays manual.
 
 ## Requirements
 
@@ -223,6 +223,22 @@ attempt is recorded in the shared `publish_events` audit trail. Telegram stays o
 pipeline and is never routed through Buffer. See
 [docs/10-buffer-publishing.md](docs/10-buffer-publishing.md) for the flow and API behaviors.
 
+## Live credential tests
+
+Guarded one-shot commands that validate real integrations with production code paths:
+
+```bash
+LIVE_INTEGRATION_TESTS=true pnpm test:telegram-publish  # one approved Telegram draft
+LIVE_INTEGRATION_TESTS=true pnpm test:r2-upload         # one local Instagram card -> R2
+LIVE_INTEGRATION_TESTS=true pnpm test:buffer-publish    # one approved X draft via Buffer
+```
+
+**Safety:** these commands make real external calls. They refuse to run without
+`LIVE_INTEGRATION_TESTS=true`, process exactly one record, print the selected `generatedPostId`,
+and never fake success. Only set the confirmation inline for the single invocation you intend. See
+[docs/16-real-credential-tests.md](docs/16-real-credential-tests.md) for required env vars, expected
+database changes, and how to avoid accidental spam.
+
 ## Production
 
 ```bash
@@ -268,3 +284,4 @@ list and limitations.
 - [Dashboard publish buttons](docs/13-dashboard-publish-buttons.md)
 - [Simple admin auth](docs/14-simple-admin-auth.md)
 - [Production deployment](docs/15-production-deployment.md)
+- [Real credential tests](docs/16-real-credential-tests.md)
