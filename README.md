@@ -123,7 +123,7 @@ See [docs/02-source-registry.md](docs/02-source-registry.md) for types, platform
 
 Extraction uses Gemini when `GEMINI_API_KEY` is set; otherwise a deterministic rules fallback runs,
 so local development needs no API key. `GEMINI_MODEL` is optional and defaults to
-`gemini-2.5-flash-lite`. See
+`gemini-3.5-flash-lite`. See
 [docs/04-normalization-and-scoring.md](docs/04-normalization-and-scoring.md) for the pipeline,
 scoring components, and `shouldPost` logic.
 

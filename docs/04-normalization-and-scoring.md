@@ -26,7 +26,7 @@ One bad post never stops a run: `normalize:once` catches per-post errors and con
 
 When `GEMINI_API_KEY` is present, extraction goes through the Gemini REST API:
 
-- the model is configurable through `GEMINI_MODEL` and defaults to `gemini-2.5-flash-lite`;
+- the model is configurable through `GEMINI_MODEL` and defaults to `gemini-3.5-flash-lite`;
 - the prompt (`packages/ai/src/prompts/job-extraction.ts`) describes the FoundryJobs target
   audience and returns strict JSON only, with no markdown fences;
 - the model is instructed to reject non-hiring posts, non-tech roles, and roles above 3 years of

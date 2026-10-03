@@ -45,7 +45,7 @@ export const ENV_CHECK_CATEGORIES: readonly EnvCheckCategory[] = [
     description: "Optional; the normalizer falls back to the deterministic rules extractor.",
     variables: [
       { name: "GEMINI_API_KEY", required: false },
-      { name: "GEMINI_MODEL", required: false, note: "defaults to gemini-2.5-flash-lite" },
+      { name: "GEMINI_MODEL", required: false, note: "defaults to gemini-3.5-flash-lite" },
     ],
   },
   {
