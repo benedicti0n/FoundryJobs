@@ -18,15 +18,48 @@ calls.
 | Variable                      | Purpose                                      |
 | ----------------------------- | -------------------------------------------- |
 | `BUFFER_ACCESS_TOKEN`         | Buffer API access token.                     |
-| `BUFFER_PROFILE_ID_X`         | Buffer profile id for the X account.         |
-| `BUFFER_PROFILE_ID_INSTAGRAM` | Buffer profile id for the Instagram account. |
-| `BUFFER_PROFILE_ID_LINKEDIN`  | Buffer profile id for the LinkedIn account.  |
+| `BUFFER_PROFILE_ID_X`         | Buffer channel id for the X account.         |
+| `BUFFER_PROFILE_ID_INSTAGRAM` | Buffer channel id for the Instagram account. |
+| `BUFFER_PROFILE_ID_LINKEDIN`  | Buffer channel id for the LinkedIn account.  |
 
 The client never reads them at import time. At call time the token plus the matching
 `BUFFER_PROFILE_ID_*` value for the post's platform are required; otherwise the error
 `BUFFER_ACCESS_TOKEN and the matching BUFFER_PROFILE_ID_* value are required for Buffer publishing`
 is returned with no database changes. The worker is stricter: it exits 1 listing every missing
 variable before touching the database.
+
+## Buffer API: GraphQL only
+
+Buffer's legacy REST API no longer accepts public API tokens (`Public API tokens are not accepted
+for REST API access`) and is scheduled for retirement on 1 February 2027. The client in
+`packages/buffer/src/client.ts` therefore talks to the GraphQL API at `https://api.buffer.com` with
+`Authorization: Bearer <BUFFER_ACCESS_TOKEN>` and the `createPost` mutation:
+
+```graphql
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) { ... }
+}
+```
+
+with `mode: shareNow`, `schedulingType: automatic`, `needsApproval: false`, `text`, and either an
+empty `assets` list (text-only posts for X and LinkedIn) or `assets: [{ image: { url } }]` for
+Instagram. The `BUFFER_PROFILE_ID_*` values are Buffer **channel ids**, not legacy profile ids; find
+them after connecting a channel with:
+
+```graphql
+query {
+  channels(input: { organizationId: "<organizationId>" }) {
+    id
+    name
+    service
+  }
+}
+```
+
+Get `organizationId` from `account { organizations { id name } }`. Successful posts return
+`PostActionSuccess.post.id` and `PostActionSuccess.post.externalLink`; error union members
+(`NotFoundError`, `InvalidInputError`, and so on) surface their message as the sanitized failure
+reason.
 
 ## Approved-only rule
 
@@ -41,15 +74,16 @@ Instagram posts publish as image posts, so the publisher checks the image before
 - a local `/generated/...` URL → skipped with
   `Instagram image URL must be public; upload the card to R2 before publishing`;
 - a public `http(s)` URL (for example after `upload-instagram-cards:once`) → published with the
-  `media[photo]` parameter.
+  GraphQL `assets: [{ image: { url } }]` input.
 
 X and LinkedIn publish text-only.
 
 ## publish_events audit trail
 
 The same audit table from Phase 7 is reused: successful publishes insert a `success` row with the
-Buffer update id and any `service_link` Buffer returns, failed Buffer calls insert a `failed` row
-with the sanitized error, and generated posts move to `published` or `failed` accordingly. Because
+GraphQL post id (`external_post_id`) and the post's `externalLink` when Buffer returns one, failed
+Buffer calls insert a `failed` row with the sanitized error, and generated posts move to
+`published` or `failed` accordingly. Because
 `publish_events.platform` is generic, the `/publish-events` page and `GET /v1/publish-events`
 already show Telegram and Buffer events together.
 
