@@ -2,7 +2,7 @@ import { getEnv } from "@foundryjobs/shared";
 import type { BufferPlatform } from "@foundryjobs/shared";
 import { BUFFER_CONFIG_ERROR, getBufferProfileId } from "./profile-config";
 
-const BUFFER_API_BASE = "https://api.bufferapp.com/1";
+const BUFFER_GRAPHQL_URL = "https://api.buffer.com";
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export type BufferUpdateOutcome = {
@@ -11,18 +11,42 @@ export type BufferUpdateOutcome = {
   status: string | null;
 };
 
-type BufferUpdate = {
-  id?: string;
-  status?: string;
-  service_update_id?: string;
-  service_link?: string;
+const CREATE_POST_MUTATION = `
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    __typename
+    ... on PostActionSuccess {
+      post {
+        id
+        status
+        channelService
+        externalLink
+      }
+    }
+    ... on NotFoundError { message }
+    ... on UnauthorizedError { message }
+    ... on UnexpectedError { message }
+    ... on RestProxyError { message }
+    ... on LimitReachedError { message }
+    ... on InvalidInputError { message }
+  }
+}
+`;
+
+type CreatePostPayload = {
+  __typename?: string;
+  message?: string | null;
+  post?: {
+    id?: string;
+    status?: string;
+    channelService?: string;
+    externalLink?: string | null;
+  } | null;
 };
 
-type BufferUpdatesResponse = {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  updates?: BufferUpdate[];
+type BufferGraphQlResponse = {
+  data?: { createPost?: CreatePostPayload | null } | null;
+  errors?: Array<{ message?: string }>;
 };
 
 function sanitizeMessage(message: string): string {
@@ -38,19 +62,19 @@ export async function createBufferUpdate(
   imageUrl?: string,
 ): Promise<BufferUpdateOutcome> {
   const accessToken = getEnv("BUFFER_ACCESS_TOKEN");
-  const profileId = getBufferProfileId(platform);
+  const channelId = getBufferProfileId(platform);
   if (!accessToken) {
     throw new Error(BUFFER_CONFIG_ERROR);
   }
 
-  const body = new URLSearchParams();
-  body.set("access_token", accessToken);
-  body.append("profile_ids[]", profileId);
-  body.set("text", text);
-  body.set("now", "true");
-  if (imageUrl) {
-    body.set("media[photo]", imageUrl);
-  }
+  const input: Record<string, unknown> = {
+    channelId,
+    text,
+    mode: "shareNow",
+    schedulingType: "automatic",
+    needsApproval: false,
+    assets: imageUrl ? [{ image: { url: imageUrl } }] : [],
+  };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => {
@@ -58,30 +82,44 @@ export async function createBufferUpdate(
   }, REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${BUFFER_API_BASE}/updates/create.json`, {
+    const response = await fetch(BUFFER_GRAPHQL_URL, {
       method: "POST",
       headers: {
-        "content-type": "application/x-www-form-urlencoded",
+        authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
       },
-      body: body.toString(),
+      body: JSON.stringify({
+        query: CREATE_POST_MUTATION,
+        variables: { input },
+      }),
       signal: controller.signal,
     });
 
-    const payload = (await response.json().catch(() => null)) as BufferUpdatesResponse | null;
+    const payload = (await response.json().catch(() => null)) as BufferGraphQlResponse | null;
 
-    if (!response.ok || payload?.success === false) {
-      const detail =
-        payload?.message ??
-        payload?.error ??
-        `Buffer request failed with status ${response.status}`;
+    if (!response.ok) {
+      throw new Error(`Buffer request failed with status ${response.status}`);
+    }
+
+    if (payload?.errors && payload.errors.length > 0) {
+      const detail = payload.errors.map((entry) => entry.message ?? "unknown error").join("; ");
       throw new Error(`Buffer publish failed: ${sanitizeMessage(detail)}`);
     }
 
-    const update = payload?.updates?.[0];
+    const result = payload?.data?.createPost;
+    if (!result) {
+      throw new Error("Buffer publish failed: empty response from Buffer GraphQL API");
+    }
+
+    if (result.__typename !== "PostActionSuccess" || !result.post) {
+      const detail = result.message ?? result.__typename ?? "unknown error";
+      throw new Error(`Buffer publish failed: ${sanitizeMessage(detail)}`);
+    }
+
     return {
-      externalPostId: update?.service_update_id ?? update?.id ?? null,
-      publishedUrl: update?.service_link ?? null,
-      status: update?.status ?? null,
+      externalPostId: result.post.id ?? null,
+      publishedUrl: result.post.externalLink ?? null,
+      status: result.post.status ?? null,
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
