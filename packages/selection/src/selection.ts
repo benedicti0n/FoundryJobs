@@ -156,6 +156,24 @@ export function selectTelegram(
 
   for (const slot of config.telegramSlotTargets) {
     let filled = 0;
+    const companiesInSlot = new Set<string>();
+
+    for (const candidate of [...remaining]) {
+      if (filled >= slot.count || selections.length >= config.telegramMaxPosts) {
+        break;
+      }
+      if (!slot.categories.includes(categoryLabel(candidate.job))) {
+        continue;
+      }
+      const companyKey = normalizeCompanyKey(candidate.job.companyName, candidate.job.sourceName);
+      if (companiesInSlot.has(companyKey) || !canTake(candidate)) {
+        continue;
+      }
+      take(candidate, `slot:${slot.label}`);
+      companiesInSlot.add(companyKey);
+      filled += 1;
+    }
+
     for (const candidate of [...remaining]) {
       if (filled >= slot.count || selections.length >= config.telegramMaxPosts) {
         break;
