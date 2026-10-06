@@ -25,9 +25,9 @@ reported (configuration only) by `GET /v1/scheduler/status` and the `/scheduler`
 
 ## Environment variables
 
-| Variable                 | Default | Purpose                                                        |
-| ------------------------ | ------- | -------------------------------------------------------------- |
-| `SCHEDULER_ENABLED`      | `false` | Must be `true` for the scheduler command to start.             |
+| Variable                 | Default | Purpose                                                                            |
+| ------------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `SCHEDULER_ENABLED`      | `false` | Must be `true` for the scheduler command to start.                                 |
 | `SCHEDULER_RUN_ON_START` | `false` | Run every job once immediately on boot, in pipeline order, before intervals begin. |
 
 Missing `DATABASE_URL` is fatal when the scheduler is enabled and the process exits 1 with a clear
