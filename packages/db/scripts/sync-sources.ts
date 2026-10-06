@@ -22,7 +22,7 @@ if (envArg === "dev") {
 } else if (envArg === "test") {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
 } else {
-  const rootEnvPath = fileURLToPath(new URL("../../../../.env", import.meta.url));
+  const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
   if (existsSync(rootEnvPath) && !process.env.DATABASE_URL) {
     process.loadEnvFile(rootEnvPath);
   }

@@ -11,6 +11,9 @@ import {
   sources,
 } from "@foundryjobs/db";
 import { runSelection, SELECTION_CONFIG, withSelectionConfig } from "../src/index";
+import { evaluateEligibility } from "../src/eligibility";
+import { rankCandidate } from "../src/ranking";
+import { capCandidates, dedupeCandidates } from "../src/selection";
 import type { CandidateJob } from "../src/types";
 
 const DEV_DATABASE_URL = "postgres://benediction@127.0.0.1:5432/foundryjobs_dev";
@@ -31,7 +34,7 @@ if (envArg === "dev") {
 } else if (envArg === "test") {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
 } else {
-  const rootEnvPath = fileURLToPath(new URL("../../../../.env", import.meta.url));
+  const rootEnvPath = fileURLToPath(new URL("../../../.env", import.meta.url));
   if (existsSync(rootEnvPath) && !process.env.DATABASE_URL) {
     process.loadEnvFile(rootEnvPath);
   }
@@ -138,12 +141,37 @@ async function main(): Promise<void> {
   );
   const result = runSelection(candidates, config);
 
+  const activeCandidates = candidates.filter((candidate) => !candidate.recentlyPublished);
+  const rankedAll = activeCandidates.map((candidate) =>
+    rankCandidate(candidate, evaluateEligibility(candidate)),
+  );
+  const deduped = dedupeCandidates(rankedAll);
+  const capped = capCandidates(deduped, config);
+  const eligibilityCounts = new Map<string, number>();
+  for (const candidate of rankedAll) {
+    eligibilityCounts.set(
+      candidate.eligibility.status,
+      (eligibilityCounts.get(candidate.eligibility.status) ?? 0) + 1,
+    );
+  }
+  const exclusionStats = {
+    candidates: candidates.length,
+    recentPublishExcluded: candidates.length - activeCandidates.length,
+    duplicateExcluded: rankedAll.length - deduped.length,
+    companyOrSourceCapExcluded: deduped.length - capped.length,
+    eligibility: Object.fromEntries(eligibilityCounts),
+  };
+
   if (asJson) {
-    console.log(JSON.stringify({ candidates: candidates.length, ...result }, null, 2));
+    console.log(JSON.stringify({ ...exclusionStats, ...result }, null, 2));
     return;
   }
 
-  console.log(`candidates=${candidates.length} (read-only preview, nothing published)\n`);
+  console.log(`candidates=${candidates.length} (read-only preview, nothing published)`);
+  console.log(
+    `exclusions: recent_publish=${exclusionStats.recentPublishExcluded} duplicates=${exclusionStats.duplicateExcluded} company_or_source_cap=${exclusionStats.companyOrSourceCapExcluded}`,
+  );
+  console.log(`eligibility: ${JSON.stringify(exclusionStats.eligibility)}\n`);
   console.log("TELEGRAM TOP 10");
   console.log(
     `${pad("#", 3)} ${pad("Company", 22)} ${pad("Role", 42)} ${pad("Category", 12)} ${pad("Score", 6)} Reason`,
