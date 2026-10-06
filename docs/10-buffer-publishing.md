@@ -43,10 +43,17 @@ mutation CreatePost($input: CreatePostInput!) {
 
 with `mode: shareNow`, `schedulingType: automatic`, `needsApproval: false`, `text`, and either an
 empty `assets` list (text-only posts for X and LinkedIn) or `assets: [{ image: { url } }]` for
-Instagram. Instagram image feed posts additionally require `type: "post"`; Buffer rejects Instagram
-posts without it (`Invalid post: Instagram posts require a type (post, story, or reel)`). The
-`BUFFER_PROFILE_ID_*` values are Buffer **channel ids**, not legacy profile ids; find them after
-connecting a channel with:
+Instagram. Instagram image feed posts additionally require network metadata on the input:
+
+```graphql
+metadata: { instagram: { type: "post", shouldShareToFeed: true } }
+```
+
+`type` is **not** a top-level `CreatePostInput` field; sending it at the top level fails GraphQL
+variable coercion (`Field "type" is not defined by type "CreatePostInput"`). The Instagram metadata
+type is `PostInputMetaData.instagram` (`InstagramPostMetadataInput`). The `BUFFER_PROFILE_ID_*`
+values are Buffer **channel ids**, not legacy profile ids; find them after connecting a channel
+with:
 
 ```graphql
 query {
@@ -78,9 +85,12 @@ Instagram posts publish as image posts, so the publisher checks the image before
 - a public `http(s)` URL (for example after `upload-instagram-cards:once`) → published with the
   GraphQL `assets: [{ image: { url } }]` input.
 
-Instagram publishes as a feed image post: the client always sends `type: "post"` together with the
-single image asset. Story and reel publishing are not implemented, and no other Instagram-specific
-fields are sent. X and LinkedIn publish text-only without a `type` field.
+Instagram publishes as a feed image post: the client always sends a single image asset plus
+`metadata.instagram = { type: "post", shouldShareToFeed: true }`. Instagram rejects posts without
+the metadata type (`Invalid post: Instagram posts require a type (post, story, or reel)`) and
+rejects a top-level `type` field during GraphQL variable coercion. Story and reel publishing are
+not implemented, and no other Instagram-specific metadata fields are sent. X and LinkedIn publish
+text-only without metadata.
 
 ## publish_events audit trail
 
