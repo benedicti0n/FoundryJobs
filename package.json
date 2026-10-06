@@ -32,7 +32,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "sources:sync": "pnpm --filter @foundryjobs/db sources:sync",
-    "sources:verify": "pnpm --filter @foundryjobs/fetchers sources:verify"
+    "sources:verify": "pnpm --filter @foundryjobs/fetchers sources:verify",
+    "jobs:select": "pnpm --filter @foundryjobs/selection select:preview"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
