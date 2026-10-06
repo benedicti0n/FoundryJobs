@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
+import test, { after, afterEach, beforeEach } from "node:test";
 import { applyApprovalAction, recordPublishSuccess } from "@foundryjobs/db";
 import { BUFFER_CONFIG_ERROR, type BufferPublishOutcome } from "@foundryjobs/buffer";
 import type { BufferPlatform } from "@foundryjobs/shared";
@@ -14,6 +14,14 @@ import {
 
 process.env.BUFFER_ACCESS_TOKEN = "test-buffer-token";
 process.env.BUFFER_PROFILE_ID_X = "test-buffer-profile-x";
+
+// This suite covers X behavior; the default-off flag is tested in tests/publishing/x-flag.test.ts.
+beforeEach(() => {
+  process.env.FEATURE_X_PUBLISHING_ENABLED = "true";
+});
+afterEach(() => {
+  delete process.env.FEATURE_X_PUBLISHING_ENABLED;
+});
 delete process.env.BUFFER_PROFILE_ID_INSTAGRAM;
 delete process.env.BUFFER_PROFILE_ID_LINKEDIN;
 

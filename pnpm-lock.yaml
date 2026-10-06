@@ -20,6 +20,9 @@ importers:
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:packages/db
+      '@foundryjobs/post-generator':
+        specifier: workspace:*
+        version: link:packages/post-generator
       '@foundryjobs/publisher':
         specifier: workspace:*
         version: link:packages/publisher

@@ -40,6 +40,7 @@
     "@foundryjobs/buffer": "workspace:*",
     "@foundryjobs/buffer-publisher": "workspace:*",
     "@foundryjobs/db": "workspace:*",
+    "@foundryjobs/post-generator": "workspace:*",
     "@foundryjobs/publisher": "workspace:*",
     "@foundryjobs/shared": "workspace:*",
     "@foundryjobs/telegram": "workspace:*",
