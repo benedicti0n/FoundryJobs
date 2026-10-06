@@ -1,0 +1,29 @@
+{
+  "name": "@foundryjobs/selection",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "select:preview": "tsx scripts/select-preview.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@foundryjobs/db": "workspace:*",
+    "@foundryjobs/shared": "workspace:*",
+    "drizzle-orm": "^0.45.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
