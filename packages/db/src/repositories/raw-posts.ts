@@ -76,6 +76,15 @@ export async function createRawPostIfNotExists(
   const database = requireDatabase();
   const contentHash = createContentHash(input.rawText);
 
+  const [existingByUrl] = await database
+    .select({ id: rawPosts.id })
+    .from(rawPosts)
+    .where(eq(rawPosts.rawUrl, input.rawUrl))
+    .limit(1);
+  if (existingByUrl) {
+    return { inserted: false };
+  }
+
   try {
     const [row] = await database
       .insert(rawPosts)
