@@ -113,9 +113,13 @@ export class WorkerScheduler {
     }
 
     if (this.config.runOnStart) {
-      for (const job of this.config.jobs) {
-        void this.runJob(job);
-      }
+      void this.runStartupSequence();
+    }
+  }
+
+  private async runStartupSequence(): Promise<void> {
+    for (const job of this.config.jobs) {
+      await this.runJob(job);
     }
   }
 
