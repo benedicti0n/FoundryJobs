@@ -25,6 +25,11 @@ export type SchedulerLogger = {
   error: (message: string) => void;
 };
 
+export type ScheduledJobRunner = (
+  name: ScheduledJobName,
+  options?: { limit?: number | null },
+) => Promise<ScheduledJobResult>;
+
 const MAX_LIMIT = 200;
 
 export function isSchedulerEnabled(): boolean {
@@ -90,6 +95,7 @@ export class WorkerScheduler {
   constructor(
     private readonly config: SchedulerConfig,
     private readonly logger: SchedulerLogger = console,
+    private readonly runner: ScheduledJobRunner = runScheduledJob,
   ) {}
 
   logBoot(): void {
@@ -159,7 +165,7 @@ export class WorkerScheduler {
     const task = (async () => {
       this.logger.log(`[scheduler] ${job.definition.name} started`);
       try {
-        const result = await runScheduledJob(job.definition.name, { limit: job.limit });
+        const result = await this.runner(job.definition.name, { limit: job.limit });
         this.lastResults.set(job.definition.name, result);
         const detail = result.errorMessage ? ` — ${result.errorMessage}` : ` — ${result.message}`;
         const line = `[scheduler] ${result.name} ${result.status} in ${result.durationMs}ms${detail}`;
