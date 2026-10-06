@@ -79,7 +79,14 @@ pnpm build      # build all apps
 pnpm typecheck  # TypeScript checks across the workspace
 pnpm lint       # ESLint across the workspace
 pnpm format     # Prettier write
+pnpm test       # recreate the local test database, migrate it, run all automated tests
+pnpm test:unit  # run the automated tests only (test DB must already be migrated)
 ```
+
+The automated regression suite uses Node's built-in `node:test` runner through `tsx`, runs against a
+disposable local `foundryjobs_test` database, mocks every external provider, and requires no
+secrets or network access. See [docs/17-automated-testing.md](docs/17-automated-testing.md) for
+conventions, the coverage map, and how to add tests.
 
 ## Database
 
