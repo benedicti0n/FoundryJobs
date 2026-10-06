@@ -6,23 +6,45 @@ import {
 } from "@foundryjobs/db";
 import {
   isEnvSet,
+  isPublicHttpUrl,
   type PublishableGeneratedPostDto,
   type TelegramPublishResult,
 } from "@foundryjobs/shared";
-import { publishGeneratedPostToTelegram, type TelegramPublishOutcome } from "@foundryjobs/telegram";
+import {
+  publishGeneratedPostToTelegram,
+  validateTelegramPhotoUrl,
+  type LogoValidationResult,
+  type TelegramPublishOptions,
+  type TelegramPublishOutcome,
+} from "@foundryjobs/telegram";
 
 const TELEGRAM_CONFIG_ERROR =
   "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are required for Telegram publishing";
 
 export type TelegramPublishDeps = {
-  provider?: (post: PublishableGeneratedPostDto) => Promise<TelegramPublishOutcome>;
+  provider?: (
+    post: PublishableGeneratedPostDto,
+    options?: TelegramPublishOptions,
+  ) => Promise<TelegramPublishOutcome>;
+  logoResolver?: (post: PublishableGeneratedPostDto) => Promise<string | null>;
+  logoValidator?: (url: string) => Promise<LogoValidationResult>;
 };
+
+async function defaultLogoResolver(post: PublishableGeneratedPostDto): Promise<string | null> {
+  const imageUrl = post.imageUrl?.trim();
+  if (imageUrl && isPublicHttpUrl(imageUrl)) {
+    return imageUrl;
+  }
+  return null;
+}
 
 export async function publishTelegramGeneratedPost(
   generatedPostId: string,
   deps: TelegramPublishDeps = {},
 ): Promise<TelegramPublishResult> {
   const provider = deps.provider ?? publishGeneratedPostToTelegram;
+  const logoResolver = deps.logoResolver ?? defaultLogoResolver;
+  const logoValidator = deps.logoValidator ?? validateTelegramPhotoUrl;
   const post = await getPublishableGeneratedPost(generatedPostId);
   if (!post) {
     return {
@@ -71,8 +93,25 @@ export async function publishTelegramGeneratedPost(
     };
   }
 
+  let logoUrl: string | null = null;
   try {
-    const outcome = await provider(post);
+    const candidateLogo = await logoResolver(post);
+    if (candidateLogo) {
+      const validation = await logoValidator(candidateLogo);
+      if (validation.ok) {
+        logoUrl = candidateLogo;
+      } else {
+        console.warn(
+          `[publisher] telegram logo skipped for ${post.generatedPostId}: ${validation.reason}`,
+        );
+      }
+    }
+  } catch {
+    console.warn(`[publisher] telegram logo resolution failed for ${post.generatedPostId}`);
+  }
+
+  try {
+    const outcome = await provider(post, { logoUrl });
     await recordPublishSuccess({
       platform: "telegram",
       jobPostId: post.jobPostId,

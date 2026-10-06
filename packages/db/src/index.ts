@@ -2,6 +2,7 @@ export * from "./client";
 export * from "./errors";
 export * from "./repositories/approvals";
 export * from "./repositories/buffer-publish";
+export * from "./repositories/companies";
 export * from "./repositories/generated-posts";
 export * from "./repositories/instagram-card-uploads";
 export * from "./repositories/instagram-cards";

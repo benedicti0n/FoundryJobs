@@ -40,9 +40,29 @@ export async function sendTelegramMessage(
   text: string,
   options: { chatId?: string } = {},
 ): Promise<TelegramSendResult> {
+  return sendTelegramRequest("sendMessage", { text, disable_web_page_preview: false }, options);
+}
+
+export async function sendTelegramPhoto(
+  photoUrl: string,
+  caption: string | null,
+  options: { chatId?: string } = {},
+): Promise<TelegramSendResult> {
+  return sendTelegramRequest(
+    "sendPhoto",
+    { photo: photoUrl, ...(caption ? { caption } : {}) },
+    options,
+  );
+}
+
+async function sendTelegramRequest(
+  method: "sendMessage" | "sendPhoto",
+  payload: Record<string, unknown>,
+  options: { chatId?: string },
+): Promise<TelegramSendResult> {
   const { botToken, chatId } = getTelegramConfig();
   const targetChatId = options.chatId ?? chatId;
-  const url = `${TELEGRAM_API_BASE}/bot${botToken}/sendMessage`;
+  const url = `${TELEGRAM_API_BASE}/bot${botToken}/${method}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => {
     controller.abort();
@@ -56,32 +76,31 @@ export async function sendTelegramMessage(
       },
       body: JSON.stringify({
         chat_id: targetChatId,
-        text,
-        disable_web_page_preview: false,
+        ...payload,
       }),
       signal: controller.signal,
     });
 
-    const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+    const result = (await response.json().catch(() => null)) as TelegramApiResponse | null;
 
-    if (!response.ok || !payload?.ok) {
+    if (!response.ok || !result?.ok) {
       const description =
-        payload?.description ?? `Telegram request failed with status ${response.status}`;
-      throw new Error(`Telegram sendMessage failed: ${description}`);
+        result?.description ?? `Telegram request failed with status ${response.status}`;
+      throw new Error(`Telegram ${method} failed: ${description}`);
     }
 
-    const result = payload.result;
+    const message = result.result;
 
     return {
-      messageId: result?.message_id ?? 0,
-      chatId: result?.chat?.id ?? targetChatId,
-      chatTitle: result?.chat?.title ?? null,
-      chatUsername: result?.chat?.username ?? null,
-      date: result?.date ?? null,
+      messageId: message?.message_id ?? 0,
+      chatId: message?.chat?.id ?? targetChatId,
+      chatTitle: message?.chat?.title ?? null,
+      chatUsername: message?.chat?.username ?? null,
+      date: message?.date ?? null,
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Telegram sendMessage timed out after ${REQUEST_TIMEOUT_MS}ms`);
+      throw new Error(`Telegram ${method} timed out after ${REQUEST_TIMEOUT_MS}ms`);
     }
     throw error;
   } finally {
