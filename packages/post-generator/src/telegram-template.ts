@@ -23,17 +23,13 @@ const INTERN_RE = /\bintern(ship)?\b/i;
 const FRESHER_RE =
   /\b(fresher|new grad|new graduate|graduate|trainee|apprentice|entry[- ]level|junior|associate)\b/i;
 const CAMPAIGN_RE =
-  /\b(trainee|apprentice|graduate engineer|fresher|hiring drive|walk[- ]?in|campus hiring)\b/i;
+  /\b(mass hiring|bulk hiring|campus hiring|graduate hiring drive|multiple openings|large[- ]scale hiring|walk[- ]?in|batch hiring|cohort hiring|hiring drive|graduate engineer trainee)\b/i;
 
 export function resolveAlertType(job: JobPostWithScoreDto): TelegramAlertType {
   const titleHaystack = `${job.roleTitle} ${job.qualification ?? ""}`.toLowerCase();
   const gradYearMatch = job.batchYears.some((year) => ["2025", "2026", "2027"].includes(year));
-  const earlyExperience = (job.experienceMin ?? 0) <= 1;
 
-  if (
-    job.sourceCategory === "mass_hiring" &&
-    (CAMPAIGN_RE.test(titleHaystack) || earlyExperience)
-  ) {
+  if (job.sourceCategory === "mass_hiring" || CAMPAIGN_RE.test(titleHaystack)) {
     return { key: "mass_hiring", heading: "🔥 Mass Hiring Alert" };
   }
   if (job.employmentType === "internship" || INTERN_RE.test(job.roleTitle)) {

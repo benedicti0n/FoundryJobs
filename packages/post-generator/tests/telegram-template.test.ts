@@ -269,3 +269,45 @@ test("example fixture: missing salary/work mode matches the documented shape", (
   assert.doesNotMatch(post, /Salary|Work Mode|Batch/);
   assert.match(post, /⏳ Experience: 0–1 years/);
 });
+
+test("mass-hiring regression: 0–1 YOE alone from a startup is not mass hiring", () => {
+  const alert = resolveAlertType(
+    job({
+      sourceCategory: "startup",
+      roleTitle: "Software Engineer",
+      employmentType: "full_time",
+      experienceMin: 0,
+      experienceMax: 1,
+      batchYears: [],
+    }),
+  );
+  assert.equal(alert.heading, "🚨 Fresher Hiring Alert");
+});
+
+test("mass-hiring regression: explicit campaign wording wins regardless of source", () => {
+  const alert = resolveAlertType(
+    job({
+      sourceCategory: "startup",
+      roleTitle: "Campus Hiring Drive 2027 - Software Engineer",
+      employmentType: "full_time",
+      experienceMin: null,
+      experienceMax: null,
+      batchYears: [],
+    }),
+  );
+  assert.equal(alert.heading, "🔥 Mass Hiring Alert");
+});
+
+test("mass-hiring regression: mass_hiring source keeps its heading", () => {
+  const alert = resolveAlertType(
+    job({
+      sourceCategory: "mass_hiring",
+      roleTitle: "Senior Manager of Facilities",
+      employmentType: "full_time",
+      experienceMin: 8,
+      experienceMax: null,
+      batchYears: [],
+    }),
+  );
+  assert.equal(alert.heading, "🔥 Mass Hiring Alert");
+});
