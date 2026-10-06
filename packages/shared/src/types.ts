@@ -7,7 +7,9 @@ export type EmploymentType = "internship" | "full_time" | "part_time" | "contrac
 export type JobStatus =
   "draft" | "scored" | "queued" | "approved" | "rejected" | "published" | "expired";
 
-export type GeneratedPostPlatform = "telegram" | "x" | "instagram" | "linkedin";
+export const GENERATED_POST_PLATFORMS = ["telegram", "x", "instagram", "linkedin"] as const;
+
+export type GeneratedPostPlatform = (typeof GENERATED_POST_PLATFORMS)[number];
 
 export type GeneratedPostStatus = "draft" | "approved" | "rejected" | "published" | "failed";
 

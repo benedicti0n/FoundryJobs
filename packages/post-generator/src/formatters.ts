@@ -134,3 +134,74 @@ export function truncateText(text: string, limit: number): string {
   }
   return `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…`;
 }
+
+export function sanitizeText(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const stripped = value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  return stripped.length > 0 ? stripped : null;
+}
+
+export function formatExperienceCompact(job: JobPostWithScoreDto): string | null {
+  const isInternship = job.employmentType === "internship";
+  const min = job.experienceMin;
+  const max = job.experienceMax;
+
+  let range: string | null = null;
+  if (min !== null && max !== null) {
+    if (max <= 0) {
+      range = "Freshers";
+    } else if (min <= 0) {
+      range = `0–${max} years`;
+    } else {
+      range = `${min}–${max} years`;
+    }
+  } else if (min !== null) {
+    range = `${min}+ years`;
+  } else if (max !== null) {
+    range = max <= 0 ? "Freshers" : `Up to ${max} years`;
+  }
+
+  if (isInternship) {
+    return range ? `Internship / ${range}` : "Internship / Freshers";
+  }
+  return range;
+}
+
+export function formatBatchEligibility(job: JobPostWithScoreDto): string | null {
+  const years = job.batchYears
+    .map((year) => year.trim())
+    .filter((year) => /^\d{4}$/.test(year))
+    .sort();
+  if (years.length > 0) {
+    return `${years.join("/")} graduates`;
+  }
+  const qualification = sanitizeText(job.qualification);
+  if (qualification && qualification.length <= 140) {
+    return qualification;
+  }
+  return null;
+}
+
+export function formatWorkModeLabel(workMode: WorkMode): string | null {
+  switch (workMode) {
+    case "remote":
+      return "Remote";
+    case "hybrid":
+      return "Hybrid";
+    case "onsite":
+      return "Onsite";
+    default:
+      return null;
+  }
+}

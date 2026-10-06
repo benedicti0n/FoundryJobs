@@ -2,28 +2,21 @@ import { and, asc, desc, eq, getTableColumns, notExists, sql, type SQL } from "d
 import {
   isEnvSet,
   isUuid,
+  type SourceCategory,
   type GeneratedPostDto,
   type GeneratedPostPlatform,
   type GeneratedPostStatus,
-  type PlatformPostDrafts,
   type SpamRisk,
 } from "@foundryjobs/shared";
 import { getDatabase, type Database } from "../client";
 import { DatabaseNotConfiguredError } from "../errors";
-import { generatedPosts, jobPosts, jobScores } from "../schema";
+import { generatedPosts, jobPosts, jobScores, rawPosts, sources } from "../schema";
 import { toJobPostDto, type JobPostDto, type JobPostRow } from "./job-posts";
 
 const GENERATED_POST_LIST_DEFAULT_LIMIT = 50;
 const GENERATED_POST_LIST_MAX_LIMIT = 200;
 const GENERATED_DATABASE_ERROR =
   "DATABASE_URL is required for generated post repository operations";
-
-const GENERATED_PLATFORMS: readonly GeneratedPostPlatform[] = [
-  "telegram",
-  "x",
-  "instagram",
-  "linkedin",
-];
 
 type GeneratedPostRow = typeof generatedPosts.$inferSelect;
 
@@ -36,6 +29,7 @@ export type JobScoreSummary = {
 
 export type JobPostWithScoreDto = Omit<JobPostDto, "latestScore"> & {
   latestScore: JobScoreSummary | null;
+  sourceCategory: SourceCategory | null;
 };
 
 export type GeneratedPostListQuery = {
@@ -73,7 +67,13 @@ export async function getJobPostWithLatestScore(id: string): Promise<JobPostWith
     return null;
   }
 
-  const [row] = await database.select().from(jobPosts).where(eq(jobPosts.id, id)).limit(1);
+  const [row] = await database
+    .select({ job: jobPosts, sourceCategory: sources.category })
+    .from(jobPosts)
+    .leftJoin(rawPosts, eq(rawPosts.id, jobPosts.rawPostId))
+    .leftJoin(sources, eq(sources.id, rawPosts.sourceId))
+    .where(eq(jobPosts.id, id))
+    .limit(1);
   if (!row) {
     return null;
   }
@@ -86,7 +86,8 @@ export async function getJobPostWithLatestScore(id: string): Promise<JobPostWith
     .limit(1);
 
   return {
-    ...toJobPostDto(row, null),
+    ...toJobPostDto(row.job, null),
+    sourceCategory: (row.sourceCategory as SourceCategory | null) ?? null,
     latestScore: scoreRow
       ? {
           totalScore: scoreRow.totalScore,
@@ -113,6 +114,7 @@ export async function listJobPostsReadyForPostGeneration(
   const rows = await database
     .select({
       ...getTableColumns(jobPosts),
+      sourceCategory: sources.category,
       scoreTotal: latestScores.totalScore,
       scoreShouldPost: latestScores.shouldPost,
       scoreSpamRisk: latestScores.spamRisk,
@@ -120,6 +122,8 @@ export async function listJobPostsReadyForPostGeneration(
     })
     .from(jobPosts)
     .innerJoin(latestScores, eq(latestScores.jobPostId, jobPosts.id))
+    .leftJoin(rawPosts, eq(rawPosts.id, jobPosts.rawPostId))
+    .leftJoin(sources, eq(sources.id, rawPosts.sourceId))
     .where(
       and(
         eq(jobPosts.status, "scored"),
@@ -137,6 +141,7 @@ export async function listJobPostsReadyForPostGeneration(
 
   return rows.map((row) => ({
     ...toJobPostDto(row as JobPostRow, null),
+    sourceCategory: (row.sourceCategory as SourceCategory | null) ?? null,
     latestScore: {
       totalScore: row.scoreTotal,
       shouldPost: row.scoreShouldPost,
@@ -146,24 +151,33 @@ export async function listJobPostsReadyForPostGeneration(
   }));
 }
 
+export type GeneratedPostDraftInput = {
+  platform: GeneratedPostPlatform;
+  textContent: string;
+  imageUrl?: string | null;
+};
+
 export async function createGeneratedPostsForJob(
   jobPostId: string,
-  drafts: PlatformPostDrafts,
+  drafts: GeneratedPostDraftInput[],
 ): Promise<GeneratedPostDto[]> {
   const database = requireDatabase();
   if (!isUuid(jobPostId)) {
     throw new Error("Invalid job post id");
   }
+  if (drafts.length === 0) {
+    return [];
+  }
 
   const rows = await database
     .insert(generatedPosts)
     .values(
-      GENERATED_PLATFORMS.map((platform) => ({
+      drafts.map((draft) => ({
         jobPostId,
-        platform,
+        platform: draft.platform,
         formatType: "single_job",
-        textContent: drafts[platform],
-        imageUrl: null,
+        textContent: draft.textContent,
+        imageUrl: draft.imageUrl ?? null,
         status: "draft" as const,
       })),
     )

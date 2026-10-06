@@ -1,7 +1,8 @@
-import type { JobPostWithScoreDto } from "@foundryjobs/db";
+import type { JobPostWithScoreDto, GeneratedPostDraftInput } from "@foundryjobs/db";
 import {
   FOUNDRYJOBS_CTA,
   PLATFORM_CHARACTER_LIMITS,
+  type GeneratedPostPlatform,
   type PlatformPostDrafts,
 } from "@foundryjobs/shared";
 import {
@@ -18,6 +19,7 @@ import {
   roleHashtag,
   truncateText,
 } from "./formatters";
+import { buildTelegramJobPost } from "./telegram-template";
 
 const X_HARD_LIMIT = 320;
 
@@ -26,31 +28,7 @@ function joinLines(parts: Array<string | null>): string {
 }
 
 export function buildTelegramDraft(job: JobPostWithScoreDto): string {
-  const skills = formatSkills(job.skills, ", ");
-  const draft = joinLines([
-    "🚨 Fresher Tech Hiring Alert",
-    "",
-    `📌 Company: ${formatCompany(job.companyName)}`,
-    `💼 Role: ${job.roleTitle}`,
-    job.qualification ? `🎓 Eligibility: ${job.qualification}` : null,
-    `🧑‍💻 Experience: ${formatExperience(job)}`,
-    `📍 Location: ${formatLocation(job.location)}`,
-    `🏠 Work Mode: ${formatWorkMode(job.workMode)}`,
-    skills.length > 0 ? `🛠 Skills: ${skills}` : null,
-    "",
-    "✅ Why this is relevant:",
-    buildRelevanceLine(job),
-    "",
-    "🔗 Apply:",
-    applyTargetText(job),
-    job.applyUrl && job.applyEmail ? `📧 ${job.applyEmail}` : null,
-    "",
-    "⚠️ Note:",
-    "Always verify the official source before sharing personal documents.",
-    "",
-    FOUNDRYJOBS_CTA,
-  ]);
-  return truncateText(draft, PLATFORM_CHARACTER_LIMITS.telegram);
+  return buildTelegramJobPost(job);
 }
 
 export function buildXDraft(job: JobPostWithScoreDto): string {
@@ -144,4 +122,33 @@ export function generatePlatformDrafts(job: JobPostWithScoreDto): PlatformPostDr
     instagram: buildInstagramDraft(job),
     linkedin: buildLinkedInDraft(job),
   };
+}
+
+export function buildPlatformDrafts(
+  job: JobPostWithScoreDto,
+  platforms: GeneratedPostPlatform[],
+  options: { telegramLogoUrl?: string | null } = {},
+): GeneratedPostDraftInput[] {
+  const drafts: GeneratedPostDraftInput[] = [];
+  for (const platform of platforms) {
+    switch (platform) {
+      case "telegram":
+        drafts.push({
+          platform,
+          textContent: buildTelegramDraft(job),
+          imageUrl: options.telegramLogoUrl ?? null,
+        });
+        break;
+      case "x":
+        drafts.push({ platform, textContent: buildXDraft(job) });
+        break;
+      case "instagram":
+        drafts.push({ platform, textContent: buildInstagramDraft(job) });
+        break;
+      case "linkedin":
+        drafts.push({ platform, textContent: buildLinkedInDraft(job) });
+        break;
+    }
+  }
+  return drafts;
 }
