@@ -127,7 +127,7 @@ export function generatePlatformDrafts(job: JobPostWithScoreDto): PlatformPostDr
 export function buildPlatformDrafts(
   job: JobPostWithScoreDto,
   platforms: GeneratedPostPlatform[],
-  options: { telegramLogoUrl?: string | null } = {},
+  options: { telegramLogoUrl?: string | null; instagramTriggerKeyword?: string | null } = {},
 ): GeneratedPostDraftInput[] {
   const drafts: GeneratedPostDraftInput[] = [];
   for (const platform of platforms) {
@@ -143,7 +143,11 @@ export function buildPlatformDrafts(
         drafts.push({ platform, textContent: buildXDraft(job) });
         break;
       case "instagram":
-        drafts.push({ platform, textContent: buildInstagramDraft(job) });
+        drafts.push({
+          platform,
+          textContent: buildInstagramDraft(job),
+          triggerKeyword: options.instagramTriggerKeyword ?? null,
+        });
         break;
       case "linkedin":
         drafts.push({ platform, textContent: buildLinkedInDraft(job) });

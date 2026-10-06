@@ -7,6 +7,9 @@ export type GeneratedPostDto = {
   formatType: string;
   textContent: string;
   imageUrl: string | null;
+  triggerKeyword: string | null;
+  automationStatus: string;
+  automationId: string | null;
   status: GeneratedPostStatus;
   createdAt: string;
   updatedAt: string;

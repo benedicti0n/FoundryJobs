@@ -125,3 +125,31 @@ test("existing rejected posts do not block regeneration of that platform", async
   assert.equal(result.status, "generated");
   assert.equal(result.generatedCount, 1);
 });
+
+test("instagram drafts receive a trigger keyword and SuperProfile state", async () => {
+  const jobPostId = await scoredJob();
+
+  await generatePostsForJob(jobPostId, { platforms: ["instagram"] });
+
+  const [post] = await listGeneratedPosts({ jobPostId, limit: 10 });
+  assert.ok(post);
+  assert.equal(post.platform, "instagram");
+  assert.ok(post.triggerKeyword && post.triggerKeyword.length > 0);
+  assert.equal(post.triggerKeyword, post.triggerKeyword.toUpperCase());
+  assert.equal(post.automationStatus, "not_provisioned");
+  assert.equal(post.automationId, null);
+});
+
+test("trigger keywords stay unique across active instagram drafts", async () => {
+  const first = await scoredJob();
+  const second = await scoredJob();
+
+  await generatePostsForJob(first, { platforms: ["instagram"] });
+  await generatePostsForJob(second, { platforms: ["instagram"] });
+
+  const keywords = [
+    ...(await listGeneratedPosts({ jobPostId: first, limit: 10 })),
+    ...(await listGeneratedPosts({ jobPostId: second, limit: 10 })),
+  ].map((post) => post.triggerKeyword);
+  assert.equal(new Set(keywords).size, 2);
+});

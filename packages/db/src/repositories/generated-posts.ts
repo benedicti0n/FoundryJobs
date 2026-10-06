@@ -1,4 +1,14 @@
-import { and, asc, desc, eq, getTableColumns, notExists, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  notExists,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import {
   isEnvSet,
   isUuid,
@@ -55,6 +65,9 @@ export function toGeneratedPostDto(row: GeneratedPostRow): GeneratedPostDto {
     formatType: row.formatType,
     textContent: row.textContent,
     imageUrl: row.imageUrl,
+    triggerKeyword: row.triggerKeyword,
+    automationStatus: row.automationStatus,
+    automationId: row.automationId,
     status: row.status as GeneratedPostStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -155,6 +168,7 @@ export type GeneratedPostDraftInput = {
   platform: GeneratedPostPlatform;
   textContent: string;
   imageUrl?: string | null;
+  triggerKeyword?: string | null;
 };
 
 export async function createGeneratedPostsForJob(
@@ -178,12 +192,32 @@ export async function createGeneratedPostsForJob(
         formatType: "single_job",
         textContent: draft.textContent,
         imageUrl: draft.imageUrl ?? null,
+        triggerKeyword: draft.triggerKeyword ?? null,
         status: "draft" as const,
       })),
     )
     .returning();
 
   return rows.map(toGeneratedPostDto);
+}
+
+export async function listActiveInstagramKeywords(): Promise<Set<string>> {
+  const database = requireDatabase();
+  const rows = await database
+    .select({ triggerKeyword: generatedPosts.triggerKeyword })
+    .from(generatedPosts)
+    .where(
+      and(
+        eq(generatedPosts.platform, "instagram"),
+        inArray(generatedPosts.status, ["draft", "approved", "published"]),
+        sql`${generatedPosts.triggerKeyword} is not null`,
+      ),
+    );
+  return new Set(
+    rows
+      .map((row) => row.triggerKeyword?.trim().toLowerCase())
+      .filter((keyword): keyword is string => Boolean(keyword)),
+  );
 }
 
 export async function listGeneratedPosts(

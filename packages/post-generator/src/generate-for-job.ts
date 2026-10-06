@@ -3,8 +3,10 @@ import {
   deleteGeneratedPostsForJob,
   getCompanyBrandingByName,
   getJobPostWithLatestScore,
+  listActiveInstagramKeywords,
   listGeneratedPosts,
 } from "@foundryjobs/db";
+import { generateInstagramTriggerKeyword } from "./instagram-keyword";
 import {
   activeGeneratedPlatforms,
   isXpublishingEnabled,
@@ -17,6 +19,7 @@ import { buildPlatformDrafts } from "./templates";
 export type GeneratePostsForJobOptions = {
   regenerate?: boolean;
   platforms?: GeneratedPostPlatform[];
+  skipScoreGate?: boolean;
 };
 
 const ACTIVE_GENERATION_STATUSES = new Set(["draft", "approved", "published"]);
@@ -60,7 +63,7 @@ export async function generatePostsForJob(
         skippedReason: "Job post has no score yet",
       };
     }
-    if (!job.latestScore.shouldPost) {
+    if (!options.skipScoreGate && !job.latestScore.shouldPost) {
       return {
         jobPostId,
         status: "skipped",
@@ -113,7 +116,17 @@ export async function generatePostsForJob(
     const telegramLogoUrl = platformsToGenerate.includes("telegram")
       ? await resolveCompanyLogoUrl(job.companyName)
       : null;
-    const drafts = buildPlatformDrafts(job, platformsToGenerate, { telegramLogoUrl });
+    const instagramTriggerKeyword = platformsToGenerate.includes("instagram")
+      ? generateInstagramTriggerKeyword(
+          job.companyName,
+          job.roleTitle,
+          await listActiveInstagramKeywords(),
+        ).display
+      : null;
+    const drafts = buildPlatformDrafts(job, platformsToGenerate, {
+      telegramLogoUrl,
+      instagramTriggerKeyword,
+    });
     const created = await createGeneratedPostsForJob(jobPostId, drafts);
 
     return { jobPostId, status: "generated", generatedCount: created.length };
@@ -159,6 +172,7 @@ export async function generatePostsForSelection(
       await generatePostsForJob(jobPostId, {
         platforms: [...platforms],
         regenerate: options.regenerate,
+        skipScoreGate: true,
       }),
     );
   }

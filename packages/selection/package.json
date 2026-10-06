@@ -14,12 +14,14 @@
   },
   "scripts": {
     "select:preview": "tsx scripts/select-preview.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:selected": "tsx scripts/generate-selected.ts"
   },
   "dependencies": {
     "@foundryjobs/db": "workspace:*",
     "@foundryjobs/shared": "workspace:*",
-    "drizzle-orm": "^0.45.3"
+    "drizzle-orm": "^0.45.3",
+    "@foundryjobs/post-generator": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
