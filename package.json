@@ -33,7 +33,9 @@
     "format": "prettier --write .",
     "sources:sync": "pnpm --filter @foundryjobs/db sources:sync",
     "sources:verify": "pnpm --filter @foundryjobs/fetchers sources:verify",
-    "jobs:select": "pnpm --filter @foundryjobs/selection select:preview"
+    "jobs:select": "pnpm --filter @foundryjobs/selection select:preview",
+    "companies:sync-logos": "pnpm --filter @foundryjobs/db companies:sync-logos",
+    "jobs:generate-selected": "pnpm --filter @foundryjobs/selection generate:selected"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

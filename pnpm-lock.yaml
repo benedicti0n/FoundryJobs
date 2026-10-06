@@ -400,6 +400,9 @@ importers:
       '@foundryjobs/db':
         specifier: workspace:*
         version: link:../db
+      '@foundryjobs/post-generator':
+        specifier: workspace:*
+        version: link:../post-generator
       '@foundryjobs/shared':
         specifier: workspace:*
         version: link:../shared

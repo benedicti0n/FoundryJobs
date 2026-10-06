@@ -1,4 +1,5 @@
 export * from "./client";
+export * from "./companies/logo-sync";
 export * from "./errors";
 export * from "./repositories/approvals";
 export * from "./repositories/buffer-publish";

@@ -19,7 +19,8 @@
     "seed:sources": "tsx src/seed/sources.ts",
     "test:db:setup": "tsx scripts/setup-test-db.ts",
     "typecheck": "tsc --noEmit",
-    "sources:sync": "tsx scripts/sync-sources.ts"
+    "sources:sync": "tsx scripts/sync-sources.ts",
+    "companies:sync-logos": "tsx scripts/sync-company-logos.ts"
   },
   "dependencies": {
     "@foundryjobs/shared": "workspace:*",
