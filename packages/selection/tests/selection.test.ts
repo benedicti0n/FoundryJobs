@@ -713,3 +713,43 @@ test("39. high-school internships do not outrank university-grad internships", (
   });
   assert.ok(university.qualityScore > highSchool.qualityScore);
 });
+
+// PRODUCTION PIPELINE REGRESSIONS (geography + education narrowness)
+
+test("40. India locations classify as india and rank above restricted non-India roles", () => {
+  const india = ranked({ location: "Bengaluru, India", sourceRegion: "india" });
+  const usOnly = ranked({
+    location: "San Francisco, USA",
+    sourceRegion: "global",
+    workMode: "onsite",
+  });
+  assert.ok(india.qualityScore > usOnly.qualityScore);
+});
+
+test("41. remote worldwide ranks above remote restricted to a country", () => {
+  const worldwide = ranked({ location: "Remote", workMode: "remote", sourceRegion: "remote" });
+  const usOnly = ranked({
+    location: "Remote (US only)",
+    workMode: "remote",
+    sourceRegion: "remote",
+  });
+  assert.ok(worldwide.qualityScore > usOnly.qualityScore);
+});
+
+test("42. remote India is treated as strong accessibility", () => {
+  const remoteIndia = ranked({
+    location: "Remote, India",
+    workMode: "remote",
+    sourceRegion: "india",
+  });
+  const unknown = ranked({ location: "", workMode: "onsite", sourceRegion: "global" });
+  assert.ok(remoteIndia.qualityScore > unknown.qualityScore);
+});
+
+test("43. PhD/doctoral roles receive a modest penalty but stay eligible", () => {
+  const phd = ranked({ roleTitle: "PhD Intern, AI Applied Scientist", sourceCategory: "big_tech" });
+  const broad = ranked({ roleTitle: "Software Engineer Intern", sourceCategory: "big_tech" });
+  assert.equal(phd.eligibility.status, "eligible");
+  assert.ok(broad.qualityScore > phd.qualityScore);
+  assert.ok(phd.scoreBreakdown.some((entry) => entry.dimension === "education_narrowness"));
+});

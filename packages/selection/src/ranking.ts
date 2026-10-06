@@ -26,24 +26,57 @@ export function freshnessPoints(postedAt: string | null, now: Date): number {
   return 1;
 }
 
-function indiaRemotePoints(job: CandidateJob): number {
-  const location = (job.location ?? "").toLowerCase();
-  const india =
-    job.sourceRegion === "india" ||
-    /india|bengaluru|bangalore|hyderabad|pune|mumbai|chennai|gurgaon|noida|delhi/.test(location);
-  if (india) {
-    return 10;
+const INDIA_LOCATION_RE =
+  /india|bengaluru|bangalore|hyderabad|pune|mumbai|chennai|gurgaon|gurugram|noida|delhi|ncr|kolkata|ahmedabad|kochi|trivandrum|indore/i;
+const RESTRICTED_COUNTRY_RE =
+  /\b(united states|usa|u\.s\.|us[- ]only|canada|emea|europe|european union|eu[- ]only|united kingdom|uk[- ]only|singapore|germany|australia|japan|uae|dubai)\b/i;
+const NARROW_EDUCATION_RE = /\b(phd|ph\.d\.?|doctoral|doctorate|high school)\b/i;
+
+export type IndiaAccessibility =
+  | "india"
+  | "remote_india"
+  | "remote_global"
+  | "global_unspecified"
+  | "restricted_non_india"
+  | "unknown";
+
+export function classifyIndiaAccessibility(job: CandidateJob): IndiaAccessibility {
+  const location = job.location ?? "";
+  const isIndia = job.sourceRegion === "india" || INDIA_LOCATION_RE.test(location);
+  const isRemote = job.workMode === "remote" || job.sourceRegion === "remote";
+
+  if (isIndia && isRemote) {
+    return "remote_india";
   }
-  if (job.workMode === "remote" || job.sourceRegion === "remote") {
-    return 8;
+  if (isIndia) {
+    return "india";
   }
-  if (job.sourceRegion === "mixed") {
-    return 6;
+  if (isRemote) {
+    return RESTRICTED_COUNTRY_RE.test(location) ? "restricted_non_india" : "remote_global";
   }
-  if (job.sourceRegion === "global") {
-    return 4;
+  if (RESTRICTED_COUNTRY_RE.test(location)) {
+    return "restricted_non_india";
   }
-  return 3;
+  if (location.trim().length === 0) {
+    return "unknown";
+  }
+  return "global_unspecified";
+}
+
+function accessibilityPoints(job: CandidateJob): number {
+  switch (classifyIndiaAccessibility(job)) {
+    case "india":
+    case "remote_india":
+      return 10;
+    case "remote_global":
+      return 8;
+    case "global_unspecified":
+      return 5;
+    case "restricted_non_india":
+      return 3;
+    case "unknown":
+      return 4;
+  }
 }
 
 function sourceQualityPoints(job: CandidateJob): number {
@@ -171,11 +204,15 @@ export function mediaWorthiness(job: CandidateJob, evaluation: EligibilityEvalua
   }
   score += Math.min(10, visualData);
 
-  const locationPoints = indiaRemotePoints(job);
+  const locationPoints = accessibilityPoints(job);
   score += locationPoints >= 8 ? 5 : locationPoints >= 6 ? 3 : 1;
 
   if (isNonEnglishTitle(job.roleTitle)) {
     score = Math.max(0, score - 15);
+  }
+
+  if (NARROW_EDUCATION_RE.test(job.roleTitle)) {
+    score = Math.max(0, score - 10);
   }
 
   return Math.max(0, Math.min(100, score));
@@ -208,7 +245,7 @@ export function rankCandidate(
   const gradPoints = gradFresherSignalPoints(job, evaluation.experience.level);
   add("grad_fresher_signals", gradPoints, 10, "fresher/new-grad signals");
 
-  const locationPoints = indiaRemotePoints(job);
+  const locationPoints = accessibilityPoints(job);
   add("india_remote_relevance", locationPoints, 10, `region ${job.sourceRegion ?? "unknown"}`);
 
   const freshPoints = freshnessPoints(job.postedAt, now);
@@ -238,6 +275,16 @@ export function rankCandidate(
       points: -languagePenalty,
       max: 0,
       detail: "non-English posting title",
+    });
+  }
+
+  const educationPenalty = NARROW_EDUCATION_RE.test(job.roleTitle) ? 6 : 0;
+  if (educationPenalty > 0) {
+    breakdown.push({
+      dimension: "education_narrowness",
+      points: -educationPenalty,
+      max: 0,
+      detail: "PhD/doctoral/high-school-specific role",
     });
   }
 
