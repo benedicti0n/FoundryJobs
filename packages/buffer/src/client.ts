@@ -74,6 +74,7 @@ export async function createBufferUpdate(
     schedulingType: "automatic",
     needsApproval: false,
     assets: imageUrl ? [{ image: { url: imageUrl } }] : [],
+    ...(platform === "instagram" ? { type: "post" } : {}),
   };
 
   const controller = new AbortController();
