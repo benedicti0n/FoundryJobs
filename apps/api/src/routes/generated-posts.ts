@@ -135,7 +135,40 @@ export async function registerGeneratedPostRoutes(app: FastifyInstance): Promise
         return reply.status(404).send({ error: { message: "Job post not found" } });
       }
 
-      const result = await generatePostsForJob(id);
+      const body =
+        typeof request.body === "object" && request.body !== null
+          ? (request.body as Record<string, unknown>)
+          : {};
+
+      let platforms: GeneratedPostPlatform[] | undefined;
+      if (body.platforms !== undefined) {
+        if (
+          !Array.isArray(body.platforms) ||
+          body.platforms.length === 0 ||
+          body.platforms.some(
+            (platform) =>
+              typeof platform !== "string" ||
+              !(GENERATED_POST_PLATFORMS as readonly string[]).includes(platform),
+          )
+        ) {
+          return reply.status(400).send({
+            error: {
+              message: `platforms must be a non-empty array of: ${GENERATED_POST_PLATFORMS.join(", ")}`,
+            },
+          });
+        }
+        platforms = body.platforms as GeneratedPostPlatform[];
+      }
+
+      let regenerate = false;
+      if (body.regenerate !== undefined) {
+        if (typeof body.regenerate !== "boolean") {
+          return reply.status(400).send({ error: { message: "regenerate must be a boolean" } });
+        }
+        regenerate = body.regenerate;
+      }
+
+      const result = await generatePostsForJob(id, { platforms, regenerate });
       return { data: result };
     },
   );

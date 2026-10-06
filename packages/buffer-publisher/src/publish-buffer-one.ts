@@ -13,6 +13,7 @@ import {
   recordPublishSuccess,
 } from "@foundryjobs/db";
 import type { BufferPlatform, BufferPublishResult } from "@foundryjobs/shared";
+import { isXpublishingEnabled } from "@foundryjobs/shared";
 
 export type BufferPublishDeps = {
   publishText?: (platform: BufferPlatform, text: string) => Promise<BufferPublishOutcome>;
@@ -48,6 +49,16 @@ export async function publishBufferGeneratedPost(
         platform: post.platform,
         status: "skipped",
         errorMessage: "Telegram publishing is handled by the Telegram pipeline, not Buffer",
+      };
+    }
+
+    if (post.platform === "x" && !isXpublishingEnabled()) {
+      return {
+        generatedPostId: post.generatedPostId,
+        jobPostId: post.jobPostId,
+        platform: post.platform,
+        status: "skipped",
+        errorMessage: "X publishing is disabled (FEATURE_X_PUBLISHING_ENABLED=false)",
       };
     }
 

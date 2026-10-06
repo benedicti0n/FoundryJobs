@@ -1,15 +1,41 @@
 import {
   createGeneratedPostsForJob,
   deleteGeneratedPostsForJob,
+  getCompanyBrandingByName,
   getJobPostWithLatestScore,
   listGeneratedPosts,
 } from "@foundryjobs/db";
-import type { GeneratePostsForJobResult } from "@foundryjobs/shared";
-import { generatePlatformDrafts } from "./templates";
+import {
+  activeGeneratedPlatforms,
+  isXpublishingEnabled,
+  isPublicHttpUrl,
+  type GeneratedPostPlatform,
+  type GeneratePostsForJobResult,
+} from "@foundryjobs/shared";
+import { buildPlatformDrafts } from "./templates";
 
 export type GeneratePostsForJobOptions = {
   regenerate?: boolean;
+  platforms?: GeneratedPostPlatform[];
 };
+
+const ACTIVE_GENERATION_STATUSES = new Set(["draft", "approved", "published"]);
+
+export async function resolveCompanyLogoUrl(companyName: string | null): Promise<string | null> {
+  if (!companyName) {
+    return null;
+  }
+  try {
+    const branding = await getCompanyBrandingByName(companyName);
+    const logoUrl = branding?.logoUrl?.trim();
+    if (logoUrl && isPublicHttpUrl(logoUrl)) {
+      return logoUrl;
+    }
+  } catch {
+    // logo resolution is best-effort; generation must not fail because of it
+  }
+  return null;
+}
 
 export async function generatePostsForJob(
   jobPostId: string,
@@ -51,20 +77,43 @@ export async function generatePostsForJob(
       };
     }
 
-    const existing = await listGeneratedPosts({ jobPostId, limit: 1 });
-    if (existing.length > 0) {
-      if (!options.regenerate) {
-        return {
-          jobPostId,
-          status: "skipped",
-          generatedCount: 0,
-          skippedReason: "Generated posts already exist for this job",
-        };
-      }
+    const requestedPlatforms = options.platforms ?? activeGeneratedPlatforms();
+    if (requestedPlatforms.length === 0) {
+      return {
+        jobPostId,
+        status: "skipped",
+        generatedCount: 0,
+        skippedReason: "No platforms requested",
+      };
+    }
+
+    const existing = await listGeneratedPosts({ jobPostId, limit: 200 });
+    if (existing.length > 0 && options.regenerate) {
       await deleteGeneratedPostsForJob(jobPostId);
     }
 
-    const drafts = generatePlatformDrafts(job);
+    const activePlatforms = new Set(
+      existing
+        .filter((post) => ACTIVE_GENERATION_STATUSES.has(post.status))
+        .map((post) => post.platform),
+    );
+    const platformsToGenerate = options.regenerate
+      ? requestedPlatforms
+      : requestedPlatforms.filter((platform) => !activePlatforms.has(platform));
+
+    if (platformsToGenerate.length === 0) {
+      return {
+        jobPostId,
+        status: "skipped",
+        generatedCount: 0,
+        skippedReason: "Generated posts already exist for the requested platforms",
+      };
+    }
+
+    const telegramLogoUrl = platformsToGenerate.includes("telegram")
+      ? await resolveCompanyLogoUrl(job.companyName)
+      : null;
+    const drafts = buildPlatformDrafts(job, platformsToGenerate, { telegramLogoUrl });
     const created = await createGeneratedPostsForJob(jobPostId, drafts);
 
     return { jobPostId, status: "generated", generatedCount: created.length };
@@ -76,4 +125,42 @@ export async function generatePostsForJob(
       errorMessage: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+export type SelectionGenerationInput = {
+  telegramJobIds: string[];
+  mediaJobIds: string[];
+};
+
+export async function generatePostsForSelection(
+  input: SelectionGenerationInput,
+  options: { regenerate?: boolean } = {},
+): Promise<GeneratePostsForJobResult[]> {
+  const platformsByJob = new Map<string, Set<GeneratedPostPlatform>>();
+  const add = (jobPostId: string, platform: GeneratedPostPlatform) => {
+    const set = platformsByJob.get(jobPostId) ?? new Set<GeneratedPostPlatform>();
+    set.add(platform);
+    platformsByJob.set(jobPostId, set);
+  };
+
+  for (const jobPostId of input.telegramJobIds) {
+    add(jobPostId, "telegram");
+  }
+  for (const jobPostId of input.mediaJobIds) {
+    add(jobPostId, "instagram");
+    if (isXpublishingEnabled()) {
+      add(jobPostId, "x");
+    }
+  }
+
+  const results: GeneratePostsForJobResult[] = [];
+  for (const [jobPostId, platforms] of platformsByJob) {
+    results.push(
+      await generatePostsForJob(jobPostId, {
+        platforms: [...platforms],
+        regenerate: options.regenerate,
+      }),
+    );
+  }
+  return results;
 }
