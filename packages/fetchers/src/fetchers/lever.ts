@@ -19,6 +19,7 @@ type LeverPosting = {
 };
 
 const API_BASE = "https://api.lever.co/v0/postings";
+export const LEVER_MAX_JOBS_PER_FETCH = 250;
 const POSTING_PATTERNS = [
   /^https?:\/\/api\.lever\.co\/v0\/postings\/([^/?#]+)/i,
   /^https?:\/\/jobs\.lever\.co\/([^/?#]+)/i,
@@ -59,7 +60,7 @@ export const leverFetcher: SourceFetcher = {
       throw new Error(`Unexpected Lever response for company: ${companySlug}`);
     }
 
-    return postings.map((posting) => {
+    return postings.slice(0, LEVER_MAX_JOBS_PER_FETCH).map((posting) => {
       const title = posting.text?.trim() || "Untitled role";
       const categories = posting.categories ?? {};
       const categoryParts = [

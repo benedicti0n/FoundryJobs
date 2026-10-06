@@ -20,6 +20,7 @@ type GreenhouseJobsResponse = {
 };
 
 const API_BASE = "https://boards-api.greenhouse.io/v1/boards";
+export const GREENHOUSE_MAX_JOBS_PER_FETCH = 300;
 const BOARD_PATTERNS = [
   /^https?:\/\/boards-api\.greenhouse\.io\/v1\/boards\/([^/?#]+)/i,
   /^https?:\/\/(?:job-)?boards\.greenhouse\.io\/([^/?#]+)/i,
@@ -48,7 +49,7 @@ export const greenhouseFetcher: SourceFetcher = {
     }
 
     const payload = await fetchJson<GreenhouseJobsResponse>(buildGreenhouseApiUrl(boardToken));
-    const jobs = payload.jobs ?? [];
+    const jobs = (payload.jobs ?? []).slice(0, GREENHOUSE_MAX_JOBS_PER_FETCH);
 
     return jobs.map((job) => {
       const title = job.title?.trim() || "Untitled role";

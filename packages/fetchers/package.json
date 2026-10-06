@@ -13,7 +13,8 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sources:verify": "tsx scripts/verify-sources.ts"
   },
   "dependencies": {
     "@foundryjobs/db": "workspace:*",

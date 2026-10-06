@@ -23,6 +23,7 @@ type AshbyJobsResponse = {
 };
 
 const API_BASE = "https://api.ashbyhq.com/posting-api/job-board";
+export const ASHBY_MAX_JOBS_PER_FETCH = 250;
 const BOARD_PATTERNS = [
   /^https?:\/\/api\.ashbyhq\.com\/posting-api\/job-board\/([^/?#]+)/i,
   /^https?:\/\/jobs\.ashbyhq\.com\/([^/?#]+)/i,
@@ -51,7 +52,7 @@ export const ashbyFetcher: SourceFetcher = {
     }
 
     const payload = await fetchJson<AshbyJobsResponse>(buildAshbyApiUrl(organization));
-    const jobs = payload.jobs ?? [];
+    const jobs = (payload.jobs ?? []).slice(0, ASHBY_MAX_JOBS_PER_FETCH);
 
     return jobs
       .filter((job) => job.isListed !== false)
