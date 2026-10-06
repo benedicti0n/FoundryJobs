@@ -19,6 +19,9 @@
     "start:worker": "pnpm --filter @foundryjobs/worker start",
     "start:scheduler": "pnpm --filter @foundryjobs/worker start:scheduler",
     "check:env": "pnpm --filter @foundryjobs/worker check-env",
+    "test": "pnpm test:db:setup && pnpm test:unit",
+    "test:db:setup": "pnpm --filter @foundryjobs/db test:db:setup",
+    "test:unit": "node --import tsx --test --test-concurrency=1 \"tests/**/*.test.ts\"",
     "test:telegram-publish": "pnpm --filter @foundryjobs/worker test:telegram-publish",
     "test:r2-upload": "pnpm --filter @foundryjobs/worker test:r2-upload",
     "test:buffer-publish": "pnpm --filter @foundryjobs/worker test:buffer-publish",
@@ -31,9 +34,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@foundryjobs/buffer": "workspace:*",
+    "@foundryjobs/buffer-publisher": "workspace:*",
+    "@foundryjobs/db": "workspace:*",
+    "@foundryjobs/publisher": "workspace:*",
+    "@foundryjobs/shared": "workspace:*",
+    "@foundryjobs/telegram": "workspace:*",
+    "drizzle-orm": "^0.45.3",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.0"
   }
