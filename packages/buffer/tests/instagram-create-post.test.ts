@@ -138,3 +138,40 @@ test("buffer error unions surface sanitized messages without a second request", 
   );
   assert.equal(calls.length, 1);
 });
+
+test("graphql coercion errors keep field-level detail while redacting secrets", async (t) => {
+  const longInputDump = "x".repeat(600);
+  stubFetch(
+    () =>
+      new Response(
+        JSON.stringify({
+          errors: [
+            {
+              message: `Variable "$input" got invalid value { text: "${longInputDump}", mode: "shareNow" }; Field "type" is not defined by type "CreatePostInput". See https://api.buffer.com/docs?access_token=supersecret123&view=full`,
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+  );
+  t.after(restoreFetch);
+
+  await assert.rejects(
+    () => createBufferUpdate("instagram", "caption", "https://cdn.test/card.png"),
+    (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      assert.match(
+        message,
+        /Field "type" is not defined by type "CreatePostInput"\./,
+        "field-level detail must survive sanitization",
+      );
+      assert.equal(message.includes("supersecret123"), false, "secrets must be redacted");
+      assert.equal(message.includes("access_token=supersecret123"), false);
+      assert.ok(
+        message.length <= 320,
+        `sanitized message must stay bounded (got ${message.length})`,
+      );
+      return true;
+    },
+  );
+});

@@ -49,11 +49,22 @@ type BufferGraphQlResponse = {
   errors?: Array<{ message?: string }>;
 };
 
+const ERROR_MESSAGE_LIMIT = 300;
+
+function truncateMiddle(message: string, limit = ERROR_MESSAGE_LIMIT): string {
+  if (message.length <= limit) {
+    return message;
+  }
+  const tailLength = Math.floor(limit / 2);
+  const headLength = limit - tailLength - 1;
+  return `${message.slice(0, headLength)}…${message.slice(message.length - tailLength)}`;
+}
+
 function sanitizeMessage(message: string): string {
-  return message
+  const redacted = message
     .replace(/access_token=[^&\s]*/gi, "access_token=[redacted]")
-    .replace(/([?&][A-Za-z0-9_%-]+=[^&\s]*)/g, "")
-    .slice(0, 300);
+    .replace(/([?&][A-Za-z0-9_%-]+=[^&\s]*)/g, "");
+  return truncateMiddle(redacted);
 }
 
 export async function createBufferUpdate(
