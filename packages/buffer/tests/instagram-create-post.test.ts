@@ -58,7 +58,7 @@ function parseInput(call: CapturedCall): Record<string, unknown> {
   return body.variables.input;
 }
 
-test("instagram createPost payload uses type=post, one image asset and unchanged scheduling", async (t) => {
+test("instagram createPost payload uses metadata.instagram, one image asset and unchanged scheduling", async (t) => {
   const calls = stubFetch();
   t.after(restoreFetch);
 
@@ -81,16 +81,19 @@ test("instagram createPost payload uses type=post, one image asset and unchanged
   assert.equal(headers["content-type"], "application/json");
 
   const input = parseInput(call);
+  assert.equal("type" in input, false, "type must never be a top-level CreatePostInput field");
   assert.equal(input.channelId, "test-ig-channel");
-  assert.equal(input.type, "post");
   assert.equal(input.text, "Exact caption text");
   assert.equal(input.mode, "shareNow");
   assert.equal(input.schedulingType, "automatic");
   assert.equal(input.needsApproval, false);
   assert.deepEqual(input.assets, [{ image: { url: "https://cdn.test/instagram-card.png" } }]);
+  assert.deepEqual(input.metadata, {
+    instagram: { type: "post", shouldShareToFeed: true },
+  });
 });
 
-test("x createPost payload stays text-only without the instagram type field", async (t) => {
+test("x createPost payload stays text-only without instagram metadata", async (t) => {
   const calls = stubFetch();
   t.after(restoreFetch);
 
@@ -100,12 +103,16 @@ test("x createPost payload stays text-only without the instagram type field", as
   assert.equal(calls.length, 1);
 
   const input = parseInput(calls[0]!);
-  assert.equal(input.channelId, "test-x-channel");
-  assert.equal(input.text, "X text only");
   assert.equal("type" in input, false);
-  assert.deepEqual(input.assets, []);
-  assert.equal(input.mode, "shareNow");
-  assert.equal(input.schedulingType, "automatic");
+  assert.equal("metadata" in input, false, "x must not receive instagram metadata");
+  assert.deepEqual(input, {
+    channelId: "test-x-channel",
+    text: "X text only",
+    mode: "shareNow",
+    schedulingType: "automatic",
+    needsApproval: false,
+    assets: [],
+  });
 });
 
 test("buffer error unions surface sanitized messages without a second request", async (t) => {
