@@ -49,7 +49,7 @@ type BufferGraphQlResponse = {
   errors?: Array<{ message?: string }>;
 };
 
-const ERROR_MESSAGE_LIMIT = 300;
+const ERROR_MESSAGE_LIMIT = 260;
 
 function truncateMiddle(message: string, limit = ERROR_MESSAGE_LIMIT): string {
   if (message.length <= limit) {
