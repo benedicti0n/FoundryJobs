@@ -21,7 +21,7 @@
     "check:env": "pnpm --filter @foundryjobs/worker check-env",
     "test": "pnpm test:db:setup && pnpm test:unit",
     "test:db:setup": "pnpm --filter @foundryjobs/db test:db:setup",
-    "test:unit": "node --import tsx --test --test-concurrency=1 \"tests/**/*.test.ts\"",
+    "test:unit": "node --import tsx --test --test-concurrency=1 \"tests/**/*.test.ts\" \"packages/*/tests/**/*.test.ts\"",
     "test:telegram-publish": "pnpm --filter @foundryjobs/worker test:telegram-publish",
     "test:r2-upload": "pnpm --filter @foundryjobs/worker test:r2-upload",
     "test:buffer-publish": "pnpm --filter @foundryjobs/worker test:buffer-publish",

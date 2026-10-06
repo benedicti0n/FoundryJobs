@@ -193,15 +193,29 @@ test("instagram posts with local or missing images are rejected before config ch
     status: "approved",
     imageUrl: "/generated/instagram-cards/instagram-card-test.png",
   });
+  const noImage = await createFixturePost({
+    jobPostId: job.id,
+    platform: "instagram",
+    status: "approved",
+    imageUrl: null,
+  });
   const fake = createFakeProviders();
 
-  const result = await publishBufferGeneratedPost(localImage.id, {
+  const localResult = await publishBufferGeneratedPost(localImage.id, {
     publishText: fake.publishText,
     publishImage: fake.publishImage,
   });
 
-  assert.equal(result.status, "skipped");
-  assert.match(result.errorMessage ?? "", /upload the card to R2/);
+  assert.equal(localResult.status, "skipped");
+  assert.match(localResult.errorMessage ?? "", /upload the card to R2/);
+
+  const noImageResult = await publishBufferGeneratedPost(noImage.id, {
+    publishText: fake.publishText,
+    publishImage: fake.publishImage,
+  });
+
+  assert.equal(noImageResult.status, "skipped");
+  assert.match(noImageResult.errorMessage ?? "", /requires a public image URL/);
   assert.equal(fake.imageCalls.length, 0);
 });
 
