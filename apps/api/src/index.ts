@@ -1,57 +1,8 @@
-import Fastify, { type FastifyError } from "fastify";
-import { APP_NAME, getPort, isEnvSet } from "@foundryjobs/shared";
-import { DatabaseNotConfiguredError, getDatabaseStatus } from "@foundryjobs/db";
-import { registerApprovalRoutes } from "./routes/approvals";
-import { registerGeneratedPostRoutes } from "./routes/generated-posts";
-import { registerJobPostRoutes } from "./routes/job-posts";
-import { registerPublishEventRoutes } from "./routes/publish-events";
-import { registerSchedulerRoutes } from "./routes/scheduler";
-import { registerRawPostRoutes } from "./routes/raw-posts";
-import { registerSourceRoutes } from "./routes/sources";
+import { APP_NAME, getPort } from "@foundryjobs/shared";
+import { getDatabaseStatus } from "@foundryjobs/db";
+import { createApp } from "./app";
 
-const app = Fastify({ logger: true });
-
-app.get("/health", async () => ({
-  ok: true,
-  service: "foundryjobs-api",
-}));
-
-app.get("/v1/status", async () => ({
-  name: APP_NAME,
-  phase: "bootstrap",
-  ready: true,
-}));
-
-app.get("/v1/db/status", async () => getDatabaseStatus());
-
-app.get("/ready", async () => {
-  const databaseConfigured = isEnvSet("DATABASE_URL");
-  const adminTokenConfigured = isEnvSet("API_ADMIN_TOKEN");
-  return {
-    ok: databaseConfigured && adminTokenConfigured,
-    databaseConfigured,
-    adminTokenConfigured,
-  };
-});
-
-app.setNotFoundHandler((request, reply) => {
-  reply
-    .status(404)
-    .send({ error: { message: `Route ${request.method}:${request.url} not found` } });
-});
-
-app.setErrorHandler((error: FastifyError, request, reply) => {
-  request.log.error(error);
-
-  if (error instanceof DatabaseNotConfiguredError) {
-    reply.status(500).send({ error: { message: error.message } });
-    return;
-  }
-
-  const statusCode = error.statusCode ?? 500;
-  const message = statusCode >= 500 ? "Internal Server Error" : error.message;
-  reply.status(statusCode).send({ error: { message } });
-});
+const app = await createApp({ logger: true });
 
 const port = getPort(4000);
 
@@ -86,11 +37,4 @@ function registerShutdownHandlers(): void {
 }
 
 registerShutdownHandlers();
-await registerSourceRoutes(app);
-await registerRawPostRoutes(app);
-await registerJobPostRoutes(app);
-await registerGeneratedPostRoutes(app);
-await registerApprovalRoutes(app);
-await registerPublishEventRoutes(app);
-await registerSchedulerRoutes(app);
 await start();

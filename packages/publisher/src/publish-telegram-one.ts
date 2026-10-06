@@ -4,15 +4,25 @@ import {
   recordPublishFailure,
   recordPublishSuccess,
 } from "@foundryjobs/db";
-import { isEnvSet, type TelegramPublishResult } from "@foundryjobs/shared";
-import { publishGeneratedPostToTelegram } from "@foundryjobs/telegram";
+import {
+  isEnvSet,
+  type PublishableGeneratedPostDto,
+  type TelegramPublishResult,
+} from "@foundryjobs/shared";
+import { publishGeneratedPostToTelegram, type TelegramPublishOutcome } from "@foundryjobs/telegram";
 
 const TELEGRAM_CONFIG_ERROR =
   "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are required for Telegram publishing";
 
+export type TelegramPublishDeps = {
+  provider?: (post: PublishableGeneratedPostDto) => Promise<TelegramPublishOutcome>;
+};
+
 export async function publishTelegramGeneratedPost(
   generatedPostId: string,
+  deps: TelegramPublishDeps = {},
 ): Promise<TelegramPublishResult> {
+  const provider = deps.provider ?? publishGeneratedPostToTelegram;
   const post = await getPublishableGeneratedPost(generatedPostId);
   if (!post) {
     return {
@@ -62,7 +72,7 @@ export async function publishTelegramGeneratedPost(
   }
 
   try {
-    const outcome = await publishGeneratedPostToTelegram(post);
+    const outcome = await provider(post);
     await recordPublishSuccess({
       platform: "telegram",
       jobPostId: post.jobPostId,

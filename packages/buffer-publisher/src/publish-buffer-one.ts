@@ -12,11 +12,23 @@ import {
   recordPublishFailure,
   recordPublishSuccess,
 } from "@foundryjobs/db";
-import type { BufferPublishResult } from "@foundryjobs/shared";
+import type { BufferPlatform, BufferPublishResult } from "@foundryjobs/shared";
+
+export type BufferPublishDeps = {
+  publishText?: (platform: BufferPlatform, text: string) => Promise<BufferPublishOutcome>;
+  publishImage?: (
+    platform: BufferPlatform,
+    text: string,
+    imageUrl: string,
+  ) => Promise<BufferPublishOutcome>;
+};
 
 export async function publishBufferGeneratedPost(
   generatedPostId: string,
+  deps: BufferPublishDeps = {},
 ): Promise<BufferPublishResult> {
+  const publishText = deps.publishText ?? publishTextToBuffer;
+  const publishImage = deps.publishImage ?? publishImagePostToBuffer;
   try {
     const post = await getBufferPublishablePost(generatedPostId);
     if (!post) {
@@ -106,13 +118,9 @@ export async function publishBufferGeneratedPost(
     try {
       let outcome: BufferPublishOutcome;
       if (post.platform === "instagram") {
-        outcome = await publishImagePostToBuffer(
-          "instagram",
-          post.textContent,
-          post.imageUrl ?? "",
-        );
+        outcome = await publishImage("instagram", post.textContent, post.imageUrl ?? "");
       } else {
-        outcome = await publishTextToBuffer(post.platform, post.textContent);
+        outcome = await publishText(post.platform, post.textContent);
       }
 
       await recordPublishSuccess({
