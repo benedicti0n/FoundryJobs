@@ -135,7 +135,10 @@ this existing one.
   `openingMessage` consent tap before the primary DM; the link arrives after the tap, not purely on
   the comment.
 - Second DM with banner media: requires a verified SuperProfile `imageAssetId`. The existing
-  automation already references one; the banner source asset still needs to be confirmed.
+  automation already references one. The approved banner candidates are now committed under
+  `apps/worker/assets/` (`foundryjobs-telegram-banner.png` 1672x941, plus alt-1 1254x1254 and
+  alt-2 2172x724); the exact file still needs visual confirmation, and it must be uploaded as a
+  verified SuperProfile asset before the follow-up card can use it.
 - The Telegram URL `https://t.me/foundry_jobs` was observed in the existing automation; it must be
   confirmed as the official community URL before being configured via `FOUNDRYJOBS_TELEGRAM_URL`
   (left empty in `.env.example`, nothing hardcoded).
