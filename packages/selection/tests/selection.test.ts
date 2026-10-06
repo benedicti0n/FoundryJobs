@@ -625,3 +625,91 @@ test("36. no random ordering drift across repeated runs", () => {
     );
   }
 });
+
+// PRODUCTION VALIDATION REGRESSIONS (first production funnel run)
+
+test("37. non-English posting titles are penalized below equivalent English roles", () => {
+  const german = ranked({
+    companyName: "Bosch Group",
+    roleTitle: "Praktikum im Bereich agentische KI für die automatisierte Codegenerierung",
+    sourceCategory: "mass_hiring",
+    employmentType: "internship",
+  });
+  const english = ranked({
+    companyName: "Bosch Group",
+    roleTitle: "Internship Agentic AI for Automated Code Generation",
+    sourceCategory: "mass_hiring",
+    employmentType: "internship",
+  });
+  assert.ok(english.qualityScore > german.qualityScore);
+  assert.ok(english.mediaScore > german.mediaScore);
+  assert.ok(german.scoreBreakdown.some((entry) => entry.dimension === "language_penalty"));
+});
+
+test("38. category slots prefer distinct companies before repeating one", () => {
+  const jobs = [
+    job({
+      companyName: "Bosch Group",
+      jobPostId: "b1",
+      sourceId: "src-bosch",
+      sourceCategory: "mass_hiring",
+      roleTitle: "Graduate Engineer Trainee A",
+      experienceMin: 0,
+      experienceMax: 1,
+    }),
+    job({
+      companyName: "Bosch Group",
+      jobPostId: "b2",
+      sourceId: "src-bosch",
+      sourceCategory: "mass_hiring",
+      roleTitle: "Graduate Engineer Trainee B",
+      experienceMin: 0,
+      experienceMax: 1,
+    }),
+    job({
+      companyName: "Intel",
+      jobPostId: "i1",
+      sourceId: "src-intel",
+      sourceCategory: "mass_hiring",
+      roleTitle: "Graduate Software Engineer",
+      experienceMin: 0,
+      experienceMax: 1,
+    }),
+    job({
+      companyName: "Endava",
+      jobPostId: "e1",
+      sourceId: "src-endava",
+      sourceCategory: "mass_hiring",
+      roleTitle: "Junior Software Engineer",
+      experienceMin: 0,
+      experienceMax: 1,
+    }),
+  ];
+  const result = runSelection(jobs, {}, NOW);
+  const massPicks = result.telegram.filter((item) => item.selectionReason === "slot:mass_hiring");
+  const companies = massPicks.map((item) => item.company);
+  assert.equal(
+    new Set(companies).size,
+    companies.length,
+    "first slot pass must use distinct companies",
+  );
+  assert.ok(massPicks.length >= 2);
+});
+
+test("39. high-school internships do not outrank university-grad internships", () => {
+  const highSchool = ranked({
+    companyName: "Stripe",
+    roleTitle: "High School Internship, Software Engineering",
+    employmentType: "internship",
+    batchYears: [],
+  });
+  const university = ranked({
+    companyName: "Pinterest",
+    roleTitle: "University Grad Software Engineer 2027",
+    employmentType: "full_time",
+    experienceMin: 0,
+    experienceMax: 1,
+    batchYears: ["2027"],
+  });
+  assert.ok(university.qualityScore > highSchool.qualityScore);
+});
