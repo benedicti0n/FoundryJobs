@@ -23,6 +23,7 @@ const starterSources: CreateSourceInput[] = [
     url: "https://boards.greenhouse.io/acmecorp",
     atsType: "greenhouse",
     trustLevel: 70,
+    isActive: false,
   },
   {
     name: "Acme Corp (Lever)",
@@ -31,6 +32,7 @@ const starterSources: CreateSourceInput[] = [
     url: "https://jobs.lever.co/acmecorp",
     atsType: "lever",
     trustLevel: 70,
+    isActive: false,
   },
   {
     name: "Acme Corp (Ashby)",
@@ -39,6 +41,7 @@ const starterSources: CreateSourceInput[] = [
     url: "https://jobs.ashbyhq.com/acmecorp",
     atsType: "ashby",
     trustLevel: 70,
+    isActive: false,
   },
   {
     name: "Example Remote Jobs RSS",
@@ -46,6 +49,7 @@ const starterSources: CreateSourceInput[] = [
     platform: "generic",
     url: "https://example.com/remote-jobs.rss",
     trustLevel: 60,
+    isActive: false,
   },
   {
     name: "Manual Submissions",
@@ -54,6 +58,7 @@ const starterSources: CreateSourceInput[] = [
     url: "https://example.com/manual-submissions",
     trustLevel: 40,
     fetchIntervalMinutes: 1440,
+    isActive: false,
   },
 ];
 

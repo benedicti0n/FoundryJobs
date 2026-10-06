@@ -30,7 +30,9 @@
     "db:studio": "pnpm --filter @foundryjobs/db db:studio",
     "db:seed:sources": "pnpm --filter @foundryjobs/db seed:sources",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "sources:sync": "pnpm --filter @foundryjobs/db sources:sync",
+    "sources:verify": "pnpm --filter @foundryjobs/fetchers sources:verify"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

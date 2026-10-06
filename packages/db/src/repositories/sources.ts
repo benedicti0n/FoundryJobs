@@ -8,9 +8,12 @@ import {
   validateCreateSourceInput,
   validateUpdateSourceInput,
   type CreateSourceInput,
+  type SourceCategory,
   type SourceDto,
   type SourceListQuery,
   type SourcePlatform,
+  type SourcePriority,
+  type SourceRegion,
   type SourceType,
   type UpdateSourceInput,
 } from "@foundryjobs/shared";
@@ -41,6 +44,9 @@ function toSourceDto(row: SourceRow): SourceDto {
     trustLevel: row.trustLevel,
     fetchIntervalMinutes: row.fetchIntervalMinutes,
     isActive: row.isActive,
+    category: row.category as SourceCategory,
+    region: row.region as SourceRegion,
+    priority: row.priority as SourcePriority,
     lastFetchedAt: row.lastFetchedAt ? row.lastFetchedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -102,6 +108,9 @@ function toInsertValues(input: CreateSourceInput): SourceInsert {
     trustLevel: input.trustLevel ?? SOURCE_DEFAULTS.trustLevel,
     fetchIntervalMinutes: input.fetchIntervalMinutes ?? SOURCE_DEFAULTS.fetchIntervalMinutes,
     isActive: input.isActive ?? SOURCE_DEFAULTS.isActive,
+    category: input.category ?? "general",
+    region: input.region ?? "global",
+    priority: input.priority ?? "normal",
   };
 }
 
@@ -114,6 +123,9 @@ export async function listSources(query: SourceListQuery = {}): Promise<SourceDt
   }
   if (query.platform !== undefined) {
     conditions.push(eq(sources.platform, query.platform));
+  }
+  if (query.category !== undefined) {
+    conditions.push(eq(sources.category, query.category));
   }
   if (query.isActive !== undefined) {
     conditions.push(eq(sources.isActive, query.isActive));
@@ -174,6 +186,12 @@ export async function getSourceById(id: string): Promise<SourceDto | null> {
   return row ? toSourceDto(row) : null;
 }
 
+export async function getSourceByUrl(url: string): Promise<SourceDto | null> {
+  const database = requireDatabase();
+  const [row] = await database.select().from(sources).where(eq(sources.url, url)).limit(1);
+  return row ? toSourceDto(row) : null;
+}
+
 export async function createSource(input: CreateSourceInput): Promise<SourceDto> {
   const database = requireDatabase();
   const values = toInsertValues(normalizeCreateInput(input));
@@ -223,6 +241,15 @@ export async function updateSource(
   }
   if (data.isActive !== undefined) {
     patch.isActive = data.isActive;
+  }
+  if (data.category !== undefined) {
+    patch.category = data.category;
+  }
+  if (data.region !== undefined) {
+    patch.region = data.region;
+  }
+  if (data.priority !== undefined) {
+    patch.priority = data.priority;
   }
 
   try {

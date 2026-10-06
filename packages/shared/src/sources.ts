@@ -16,6 +16,8 @@ export const SOURCE_PLATFORMS = [
   "ashby",
   "workable",
   "workday",
+  "smartrecruiters",
+  "rss",
   "generic",
   "telegram",
   "x",
@@ -23,6 +25,29 @@ export const SOURCE_PLATFORMS = [
 ] as const;
 
 export type SourcePlatform = (typeof SOURCE_PLATFORMS)[number];
+
+export const SOURCE_CATEGORIES = [
+  "big_tech",
+  "startup",
+  "yc",
+  "remote",
+  "mass_hiring",
+  "general",
+] as const;
+
+export type SourceCategory = (typeof SOURCE_CATEGORIES)[number];
+
+export const SOURCE_REGIONS = ["india", "global", "remote", "mixed"] as const;
+
+export type SourceRegion = (typeof SOURCE_REGIONS)[number];
+
+export const SOURCE_PRIORITIES = ["high", "normal", "low"] as const;
+
+export type SourcePriority = (typeof SOURCE_PRIORITIES)[number];
+
+export const SOURCE_CATEGORY_DEFAULT: SourceCategory = "general";
+export const SOURCE_REGION_DEFAULT: SourceRegion = "global";
+export const SOURCE_PRIORITY_DEFAULT: SourcePriority = "normal";
 
 export const SOURCE_TRUST_LEVEL_MIN = 0;
 export const SOURCE_TRUST_LEVEL_MAX = 100;
@@ -47,6 +72,9 @@ export type CreateSourceInput = {
   trustLevel?: number;
   fetchIntervalMinutes?: number;
   isActive?: boolean;
+  category?: SourceCategory;
+  region?: SourceRegion;
+  priority?: SourcePriority;
 };
 
 export type UpdateSourceInput = {
@@ -58,6 +86,9 @@ export type UpdateSourceInput = {
   trustLevel?: number;
   fetchIntervalMinutes?: number;
   isActive?: boolean;
+  category?: SourceCategory;
+  region?: SourceRegion;
+  priority?: SourcePriority;
 };
 
 export type SetSourceActiveInput = {
@@ -74,6 +105,9 @@ export type SourceDto = {
   trustLevel: number;
   fetchIntervalMinutes: number;
   isActive: boolean;
+  category: SourceCategory;
+  region: SourceRegion;
+  priority: SourcePriority;
   lastFetchedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -82,6 +116,7 @@ export type SourceDto = {
 export type SourceListQuery = {
   type?: SourceType;
   platform?: SourcePlatform;
+  category?: SourceCategory;
   isActive?: boolean;
   search?: string;
   limit?: number;
@@ -265,6 +300,9 @@ export function validateCreateSourceInput(input: unknown): ValidationResult<Crea
     errors,
   );
   const isActive = parseOptionalBoolean(input.isActive, "isActive", errors);
+  const category = parseOptionalEnum(input.category, "category", SOURCE_CATEGORIES, errors);
+  const region = parseOptionalEnum(input.region, "region", SOURCE_REGIONS, errors);
+  const priority = parseOptionalEnum(input.priority, "priority", SOURCE_PRIORITIES, errors);
 
   if (errors.length > 0) {
     return { ok: false, errors };
@@ -284,6 +322,9 @@ export function validateCreateSourceInput(input: unknown): ValidationResult<Crea
       trustLevel: trustLevel ?? SOURCE_DEFAULTS.trustLevel,
       fetchIntervalMinutes: fetchIntervalMinutes ?? SOURCE_DEFAULTS.fetchIntervalMinutes,
       isActive: isActive ?? SOURCE_DEFAULTS.isActive,
+      category: category ?? SOURCE_CATEGORY_DEFAULT,
+      region: region ?? SOURCE_REGION_DEFAULT,
+      priority: priority ?? SOURCE_PRIORITY_DEFAULT,
     },
   };
 }
@@ -378,6 +419,30 @@ export function validateUpdateSourceInput(input: unknown): ValidationResult<Upda
     }
   }
 
+  if (Object.hasOwn(input, "category")) {
+    providedFields += 1;
+    const category = parseOptionalEnum(input.category, "category", SOURCE_CATEGORIES, errors);
+    if (category !== undefined) {
+      data.category = category;
+    }
+  }
+
+  if (Object.hasOwn(input, "region")) {
+    providedFields += 1;
+    const region = parseOptionalEnum(input.region, "region", SOURCE_REGIONS, errors);
+    if (region !== undefined) {
+      data.region = region;
+    }
+  }
+
+  if (Object.hasOwn(input, "priority")) {
+    providedFields += 1;
+    const priority = parseOptionalEnum(input.priority, "priority", SOURCE_PRIORITIES, errors);
+    if (priority !== undefined) {
+      data.priority = priority;
+    }
+  }
+
   if (errors.length > 0) {
     return { ok: false, errors };
   }
@@ -413,6 +478,11 @@ export function parseSourceListQuery(raw: unknown): ValidationResult<SourceListQ
   const platform = parseOptionalEnum(input.platform, "platform", SOURCE_PLATFORMS, errors);
   if (platform !== undefined) {
     data.platform = platform;
+  }
+
+  const category = parseOptionalEnum(input.category, "category", SOURCE_CATEGORIES, errors);
+  if (category !== undefined) {
+    data.category = category;
   }
 
   if (input.isActive !== undefined) {

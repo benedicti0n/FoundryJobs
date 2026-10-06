@@ -18,7 +18,8 @@
     "db:studio": "drizzle-kit studio",
     "seed:sources": "tsx src/seed/sources.ts",
     "test:db:setup": "tsx scripts/setup-test-db.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sources:sync": "tsx scripts/sync-sources.ts"
   },
   "dependencies": {
     "@foundryjobs/shared": "workspace:*",

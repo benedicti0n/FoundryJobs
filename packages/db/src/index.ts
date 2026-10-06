@@ -10,6 +10,8 @@ export * from "./repositories/prompt-runs";
 export * from "./repositories/publish-events";
 export * from "./repositories/raw-posts";
 export * from "./repositories/sources";
+export * from "./sources/manifest";
+export * from "./sources/sync";
 export * as schema from "./schema";
 export * from "./schema";
 export * from "./status";
