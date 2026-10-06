@@ -74,7 +74,9 @@ export async function createBufferUpdate(
     schedulingType: "automatic",
     needsApproval: false,
     assets: imageUrl ? [{ image: { url: imageUrl } }] : [],
-    ...(platform === "instagram" ? { type: "post" } : {}),
+    ...(platform === "instagram"
+      ? { metadata: { instagram: { type: "post", shouldShareToFeed: true } } }
+      : {}),
   };
 
   const controller = new AbortController();
