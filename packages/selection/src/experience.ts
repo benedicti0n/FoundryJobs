@@ -87,5 +87,9 @@ export function gradFresherSignalPoints(job: CandidateJob, level: ExperienceLeve
     points = Math.min(10, points + 4);
   }
 
+  if (/high school/i.test(haystack)) {
+    points = Math.min(points, 4);
+  }
+
   return points;
 }

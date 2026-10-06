@@ -109,6 +109,13 @@ function massHiringScalePoints(job: CandidateJob, evaluation: EligibilityEvaluat
   return 0;
 }
 
+const NON_ENGLISH_TITLE_RE =
+  /\b(praktikum|praktikant|werkstudent|ausbildung|berufspraktikum|stage|alternance|stagiaire|hospitation|m\/w\/d)\b/i;
+
+function isNonEnglishTitle(title: string): boolean {
+  return NON_ENGLISH_TITLE_RE.test(title);
+}
+
 export function mediaWorthiness(job: CandidateJob, evaluation: EligibilityEvaluation): number {
   if (evaluation.status === "reject" || !job.applyUrl) {
     return 0;
@@ -167,6 +174,10 @@ export function mediaWorthiness(job: CandidateJob, evaluation: EligibilityEvalua
   const locationPoints = indiaRemotePoints(job);
   score += locationPoints >= 8 ? 5 : locationPoints >= 6 ? 3 : 1;
 
+  if (isNonEnglishTitle(job.roleTitle)) {
+    score = Math.max(0, score - 15);
+  }
+
   return Math.max(0, Math.min(100, score));
 }
 
@@ -219,6 +230,16 @@ export function rankCandidate(
 
   const media = mediaWorthiness(job, evaluation);
   add("media_worthiness", Math.round((media / 100) * 5), 5, `media score ${media}`);
+
+  const languagePenalty = isNonEnglishTitle(job.roleTitle) ? 8 : 0;
+  if (languagePenalty > 0) {
+    breakdown.push({
+      dimension: "language_penalty",
+      points: -languagePenalty,
+      max: 0,
+      detail: "non-English posting title",
+    });
+  }
 
   const qualityScore = Math.max(
     0,
