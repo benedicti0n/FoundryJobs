@@ -28,7 +28,7 @@ reported (configuration only) by `GET /v1/scheduler/status` and the `/scheduler`
 | Variable                 | Default | Purpose                                                        |
 | ------------------------ | ------- | -------------------------------------------------------------- |
 | `SCHEDULER_ENABLED`      | `false` | Must be `true` for the scheduler command to start.             |
-| `SCHEDULER_RUN_ON_START` | `false` | Run every job once immediately on boot before intervals begin. |
+| `SCHEDULER_RUN_ON_START` | `false` | Run every job once immediately on boot, in pipeline order, before intervals begin. |
 
 Missing `DATABASE_URL` is fatal when the scheduler is enabled and the process exits 1 with a clear
 message. Missing `R2_*` variables are not fatal: the upload job is skipped with
@@ -50,7 +50,7 @@ rows and files it creates locally, never public posts.
 # Start the scheduler (only runs when explicitly enabled)
 SCHEDULER_ENABLED=true pnpm --filter @foundryjobs/worker scheduler
 
-# Run every job once immediately, then keep scheduling
+# Run every job once in pipeline order, then keep scheduling
 SCHEDULER_ENABLED=true SCHEDULER_RUN_ON_START=true pnpm --filter @foundryjobs/worker scheduler
 
 # Shorter intervals for testing (values are minutes and accept fractions)
@@ -61,6 +61,12 @@ Behavior guarantees:
 
 - with `SCHEDULER_ENABLED` unset or false the command prints `FoundryJobs scheduler is disabled.`
   and exits 0 without starting anything;
+- with `SCHEDULER_RUN_ON_START=true` the startup pass runs the jobs sequentially in dependency order
+  (fetch, normalize, generate, render, upload) instead of firing them all at once, so a single boot
+  completes the full chain: posts fetched on boot are normalized and drafted, and cards rendered on
+  boot are uploaded, without waiting for the next interval;
+- recurring interval ticks stay independent per job, so the schedule remains best-effort and
+  eventually consistent outside the startup pass;
 - a job never overlaps with itself; ticks that fire while the same job is running are skipped with
   `still running; skipping overlapping tick`;
 - a failing job is logged with its error and does not stop the scheduler or future runs;
